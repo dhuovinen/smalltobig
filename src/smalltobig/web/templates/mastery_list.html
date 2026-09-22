@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Mastery — From Small to Big{% endblock %}
+{% block content %}
+<h1>Mastery</h1>
+<p class="muted">
+  Weakest first. Box 5 needs at least one roleplay or field-note signal — drills
+  alone cap at box 4 (CLAUDE.md non-negotiable #5).
+</p>
+{% if rows %}
+<table>
+  <thead><tr><th>Rule</th><th>Box</th><th>Score</th><th></th></tr></thead>
+  <tbody>
+    {% for rule, mastery in rows %}
+    <tr>
+      <td><a href="/rules/{{ rule.id }}">{{ rule.name }}</a></td>
+      <td><span class="badge box-{{ mastery.box }}">box {{ mastery.box }}</span></td>
+      <td class="muted">{{ "%.1f"|format(mastery.score) }}</td>
+      <td><a class="button" href="/rules/{{ rule.id }}/drill">Drill</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">No accepted rules yet.</p>
+{% endif %}
+{% endblock %}

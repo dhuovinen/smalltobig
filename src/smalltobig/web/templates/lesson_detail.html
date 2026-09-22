@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ lesson.name }} — From Small to Big{% endblock %}
+{% block content %}
+<p class="muted"><a href="/lessons">&larr; Lessons</a></p>
+<h1>{{ lesson.name }}</h1>
+{% if not lesson.scenario_id %}
+<p class="muted">No roleplay scenario yet — that arrives in Phase 5.</p>
+{% endif %}
+{% for rule in rules %}
+<section class="card">
+  <p>
+    <span class="badge tier-{{ rule.evidence_tier }}">tier {{ rule.evidence_tier }}</span>
+    <a href="/rules/{{ rule.id }}">{{ rule.name }}</a>
+  </p>
+  <p>{{ rule.imperative }}</p>
+  <div class="actions">
+    <a class="button" href="/rules/{{ rule.id }}/drill">Drill this rule</a>
+  </div>
+</section>
+{% endfor %}
+{% endblock %}

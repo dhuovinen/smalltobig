@@ -12,6 +12,9 @@
   &middot; superseded by <a href="/rules/{{ rule.superseded_by }}">{{ rule.superseded_by }}</a>
   {% endif %}
 </p>
+<div class="actions">
+  <a class="button" href="/rules/{{ rule.id }}/drill">Drill this rule</a>
+</div>
 
 <section class="card">
   <p><strong>Imperative:</strong> {{ rule.imperative }}</p>

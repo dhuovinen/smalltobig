@@ -11,13 +11,15 @@ conversation.
 Everything runs on your machine. All inference is on-device via
 [MLX](https://github.com/ml-explore/mlx). Nothing you log leaves it.
 
-> **Status: Phase 3 (rules).** The design is complete and the seed corpus is
-> real. `stb synthesize` clusters accepted claims, drafts candidate rules and
-> proposes conflicts — you accept, reject, supersede, and resolve conflicts in
-> the web UI, and an accepted rule is exported to `rules/<id>.yaml`, plain and
-> git-tracked. This step needed a real model, not a toy one: live testing
-> found a 3B-class local model workable and a 0.5B one wasn't (see
-> [docs/DECISIONS.md](docs/DECISIONS.md) #11). Start with
+> **Status: Phase 4 (lessons and drills).** The design is complete and the seed
+> corpus is real. `stb lessons` sequences your accepted rules into lessons;
+> the web UI runs the drill loop — a generated stimulus, your typed response,
+> scored against that rule's rubric only, with every "yes" backed by a quoted
+> span verified byte-for-byte against what you actually wrote. Mastery is
+> Leitner boxes per rule, and a rule cannot reach the top box on drills alone
+> (see [docs/DECISIONS.md](docs/DECISIONS.md) #15 for what live-testing this
+> against a real model actually looked like — the judge is the weak link, and
+> the verify gate is what makes that safe rather than just risky). Start with
 > [docs/PLAN.md](docs/PLAN.md).
 
 ## Why not just read the books

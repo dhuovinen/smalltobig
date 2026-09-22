@@ -251,3 +251,47 @@ anyone.
 **Worth considering:** pulling the debrief log forward to Phase 4, before drills.
 It is the cheapest piece in the whole project (a text box and an LLM extraction
 call) and the only one that measures the thing you actually want.
+
+### 15. The judge/generate split from #11–#12 held up again in Phase 4
+
+**Tested live (2026-09-22)**, same 3B model (`Qwen2.5-3B-Instruct-4bit`) that
+drafted good rules in Phase 3. Drills split cleanly along the same fault line
+#11 and #12 already found: *generating* a stimulus was fine once prompted
+correctly; *judging* a response against the rubric was shakier — the same
+model that writes well doesn't reliably grade well.
+
+- **Stimulus generation needed one prompt fix.** The first version asked for
+  "a line a conversation partner might say" and got back things like *"So,
+  what's the rule you're practicing today?"* — a meta-comment, not something
+  to react to. The rule this drill tests ("ask about what they just said")
+  only makes sense against an answer-shaped stimulus, so the prompt now says
+  so explicitly ("their own statement... never a question aimed back at the
+  practicer"). Fixed it in every subsequent sample.
+- **The judge sometimes nests its own output**: asked for one flat JSON array
+  with one element per rubric item, it returned `[[item1], [item2]]` —
+  each item correctly formed but wrapped in its own single-element array.
+  `practice/drills.py` now flattens one level defensively rather than
+  dropping every item (which is what happened before the fix — the whole
+  drill silently graded "failed" regardless of the actual response).
+- **The verify gate caught a real hallucinated "yes" post-fix**: the judge
+  marked `no_topic_jump` passed but supplied `quote: ">"` — a single
+  character that isn't in the response at all. `verify_claim` correctly
+  rejected it and the item was scored failed. This is the same mechanism as
+  #12's conflict-judge finding: the model's boolean verdict is not
+  trustworthy on its own, and here the gate is what makes that safe rather
+  than just noted as a risk.
+- **Net effect on a real drill**: a clearly good response ("what trails have
+  you been exploring?") sometimes scored one rubric item genuinely passed and
+  the other correctly rejected for a bad quote — an honest partial credit,
+  not a clean pass. Expect drills to under-credit good responses more often
+  than they over-credit bad ones; that's the intended failure direction.
+- **Lesson naming is the roughest edge, and the lowest-stakes one.** At
+  `temperature=0.3`, about 1 in 4 calls returned a name mixing English and
+  garbled other-language characters (e.g. `"Question接力跟进"`). No fix
+  applied — lessons have no accept/reject gate (docs/PLAN.md §2 Stage 4:
+  "generated... then hand-edited"), so a bad name is exactly what that
+  hand-edit step is for. Verified live: editing `lessons/<id>.yaml` directly
+  while `stb serve` was running changed what the web UI showed on the next
+  request, no restart or sync step needed — the YAML-only design in
+  store/repo_lessons.py delivers on that promise for real, not just in
+  theory.

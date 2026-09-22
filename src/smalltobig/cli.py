@@ -130,6 +130,28 @@ def synthesize(threshold: float | None) -> None:
 
 
 @main.command()
+def lessons() -> None:
+    """Sequence not-yet-lessoned accepted rules into lessons/*.yaml."""
+    from smalltobig.llm.openai_compat import OpenAICompatClient
+    from smalltobig.store import db
+    from smalltobig.synth.pipeline import generate_lessons
+
+    settings = get_settings()
+    conn = db.connect(settings.db_path)
+    try:
+        with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+            summary = generate_lessons(conn, settings, client)
+    finally:
+        conn.close()
+
+    click.echo(
+        f"{summary.accepted_rules} accepted rule(s), "
+        f"{summary.already_lessoned} already in a lesson"
+    )
+    click.echo(f"{summary.lessons_created} lesson(s) created in {settings.lessons_dir}")
+
+
+@main.command()
 @click.option("--host", default="127.0.0.1", show_default=True)
 @click.option("--port", type=int, default=None, help="Defaults to STB_PORT.")
 def serve(host: str, port: int | None) -> None:

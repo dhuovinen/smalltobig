@@ -1,14 +1,15 @@
 # From Small to Big — project instructions
 
 Local-first app. Everything runs on one machine for one user; all inference is
-on-device via MLX. **Status: Phase 3 (rules).** `stb doctor`, ingest, `stb
-extract` and `stb synthesize` are implemented and green — clustering, rule
-drafting, conflict detection, and the accept/reject/supersede workflow with
-YAML export to `rules/`. See `docs/PLAN.md` before proposing anything past
-Phase 3 (Lessons and drills). **Read `docs/DECISIONS.md` #11 and #12 before
-touching `synth/` or `embed/cluster.py`** — both were live-tested against real
-models on 2026-09-22 and the findings (threshold recalibration, which model
-tier actually works, the conflict judge's real failure mode) are load-bearing,
+on-device via MLX. **Status: Phase 4 (lessons and drills).** `stb doctor`,
+ingest, `stb extract`, `stb synthesize` and `stb lessons` are implemented and
+green — the drill loop, Leitner mastery boxes, and lesson sequencing with
+YAML export to `lessons/`. See `docs/PLAN.md` before proposing anything past
+Phase 4 (Roleplay). **Read `docs/DECISIONS.md` #11, #12 and #15 before
+touching `synth/`, `embed/cluster.py`, or `practice/drills.py`** — all
+live-tested against real models (2026-09-22) and the findings (threshold
+recalibration, which model tier actually works, the judge's real failure
+mode — twice now, rule conflicts and drill rubrics both) are load-bearing,
 not speculative.
 
 This branch stays on the original `docs/PLAN.md` direction rather than the
@@ -63,15 +64,21 @@ stb extract <source_id>   # chunk, ask the model for claims, verify each by
 stb synthesize  # cluster accepted claims into candidate rules, propose
                 # conflicts — needs a bigger model than doctor/extract;
                 # see DECISIONS.md #11 before assuming your model can do this
+stb lessons     # sequence not-yet-lessoned accepted rules into lessons/*.yaml
+                # (prerequisite DAG, then tier, then weakest mastery)
 stb serve       # web UI at http://127.0.0.1:3041 — sources, claims review,
-                # rules (accept/reject/supersede), conflicts (resolve)
+                # rules (accept/reject/supersede), conflicts (resolve),
+                # lessons, the drill loop, and a mastery dashboard
 ```
 
 Config is `STB_*` environment variables, with `.env` **auto-loaded** — env vars
 override the file. Accepting a rule writes `rules/<id>.yaml` in `STB_REPO_ROOT`
 (default: cwd) — git-tracked, one-way sync from the database, never the other
-way (see store/yaml_sync.py). Phase 3 stops at rules/conflicts; nothing in
-Phase 4 (lessons, drills, Leitner boxes) exists yet.
+way (see store/yaml_sync.py). `lessons/<id>.yaml` is different: no DB copy at
+all, no sync direction to reason about — the web UI reads the YAML files
+directly, so a hand-edit shows up immediately (see store/repo_lessons.py).
+Phase 4 stops at lessons/drills/mastery; nothing in Phase 5 (roleplay,
+actor/judge separation, scenarios) exists yet.
 
 ## Build / test / lint
 

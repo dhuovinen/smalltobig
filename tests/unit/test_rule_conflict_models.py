@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from smalltobig.models.conflict import generate_conflict_id
+from smalltobig.models.lesson import generate_lesson_id
 from smalltobig.models.rule import generate_rule_id
 
 
@@ -19,3 +20,7 @@ def test_generate_conflict_id_is_order_independent() -> None:
 
 def test_generate_conflict_id_differs_for_different_pairs() -> None:
     assert generate_conflict_id("rule-a", "rule-b") != generate_conflict_id("rule-a", "rule-c")
+
+
+def test_generate_lesson_id_slugifies_the_name() -> None:
+    assert generate_lesson_id("Ask and Listen") == "ask-and-listen"

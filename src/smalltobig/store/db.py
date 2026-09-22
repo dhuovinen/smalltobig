@@ -69,6 +69,26 @@ CREATE TABLE IF NOT EXISTS conflicts (
     created_at TEXT NOT NULL,
     resolved_at TEXT
 );
+
+CREATE TABLE IF NOT EXISTS drills (
+    id TEXT PRIMARY KEY,
+    rule_id TEXT NOT NULL REFERENCES rules(id),
+    stimulus TEXT NOT NULL,
+    response TEXT NOT NULL,
+    rubric_results_json TEXT NOT NULL,
+    success INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_drills_rule_id ON drills(rule_id);
+
+CREATE TABLE IF NOT EXISTS mastery (
+    rule_id TEXT PRIMARY KEY REFERENCES rules(id),
+    box INTEGER NOT NULL,
+    score REAL NOT NULL,
+    has_non_drill_evidence INTEGER NOT NULL,
+    updated_at TEXT NOT NULL
+);
 """
 
 

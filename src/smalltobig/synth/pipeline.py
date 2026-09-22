@@ -17,15 +17,18 @@ from typing import TYPE_CHECKING
 
 from smalltobig.embed.cluster import DEFAULT_SIMILARITY_THRESHOLD, cluster_by_similarity
 from smalltobig.models.conflict import Conflict, ConflictStatus, generate_conflict_id
+from smalltobig.models.lesson import Lesson, generate_lesson_id
 from smalltobig.models.rule import RubricItem, Rule, RuleStatus, generate_rule_id
-from smalltobig.store import repo_claims, repo_conflicts, repo_rules
+from smalltobig.store import repo_claims, repo_conflicts, repo_lessons, repo_mastery, repo_rules
 from smalltobig.synth.conflicts import find_conflict_candidates, judge_conflict
+from smalltobig.synth.lessons import name_lesson, order_rules_for_lessons
 from smalltobig.synth.rules import draft_rule_from_cluster
 
 if TYPE_CHECKING:
     import sqlite3
     from collections.abc import Callable
 
+    from smalltobig.config import Settings
     from smalltobig.llm.client import LlmClient
 
 
@@ -130,4 +133,65 @@ def synthesize_rules(
         rules_skipped_existing=skipped,
         conflict_candidates=len(candidates),
         conflicts_proposed=proposed_count,
+    )
+
+
+@dataclass(frozen=True)
+class LessonGenerationSummary:
+    accepted_rules: int
+    already_lessoned: int
+    lessons_created: int
+
+
+def _unique_lesson_id(settings: Settings, name: str) -> str:
+    base = generate_lesson_id(name)
+    candidate = base
+    suffix = 2
+    while repo_lessons.get(settings, candidate) is not None:
+        candidate = f"{base}-{suffix}"
+        suffix += 1
+    return candidate
+
+
+def generate_lessons(
+    conn: sqlite3.Connection,
+    settings: Settings,
+    llm_client: LlmClient,
+    *,
+    group_size: int = 3,
+) -> LessonGenerationSummary:
+    """Group not-yet-sequenced accepted rules into lessons of up to
+    `group_size`, in prerequisite/tier/weakest-mastery order, and write
+    each as its own file under settings.lessons_dir. Re-running only
+    covers rules no existing lesson already names — a hand-edited lesson
+    file is never touched (store/repo_lessons.py)."""
+    accepted_rules = [
+        rule for rule in repo_rules.list_all(conn) if rule.status == RuleStatus.ACCEPTED
+    ]
+    already_lessoned = {
+        rule_id for lesson in repo_lessons.list_all(settings) for rule_id in lesson.rule_ids
+    }
+    candidates = [rule for rule in accepted_rules if rule.id not in already_lessoned]
+
+    mastery_by_rule = {mastery.rule_id: mastery for mastery in repo_mastery.list_all(conn)}
+    ordered = order_rules_for_lessons(candidates, mastery_by_rule)
+
+    created = 0
+    now = datetime.now(UTC)
+    for start in range(0, len(ordered), group_size):
+        group = ordered[start : start + group_size]
+        name = name_lesson(llm_client, group)
+        lesson = Lesson(
+            id=_unique_lesson_id(settings, name),
+            name=name,
+            rule_ids=[rule.id for rule in group],
+            created_at=now,
+        )
+        repo_lessons.create(settings, lesson)
+        created += 1
+
+    return LessonGenerationSummary(
+        accepted_rules=len(accepted_rules),
+        already_lessoned=len(accepted_rules) - len(candidates),
+        lessons_created=created,
     )

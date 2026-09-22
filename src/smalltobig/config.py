@@ -58,6 +58,10 @@ class Settings(BaseSettings):
     def rules_dir(self) -> Path:
         return self.repo_root / "rules"
 
+    @property
+    def lessons_dir(self) -> Path:
+        return self.repo_root / "lessons"
+
 
 def get_settings() -> Settings:
     return Settings()

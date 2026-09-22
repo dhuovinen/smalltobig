@@ -143,3 +143,21 @@ def test_synthesize_reports_the_summary(
     assert "5 accepted claim(s), 2 cluster(s)" in result.output
     assert "2 rule(s) drafted, 0 already covered" in result.output
     assert "1 near-neighbour pair(s) checked, 1 conflict(s) proposed" in result.output
+
+
+def test_lessons_reports_the_summary(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("STB_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("STB_REPO_ROOT", str(tmp_path))
+    monkeypatch.setattr(
+        synth_pipeline,
+        "generate_lessons",
+        lambda conn, settings, client: synth_pipeline.LessonGenerationSummary(
+            accepted_rules=5, already_lessoned=2, lessons_created=1
+        ),
+    )
+
+    result = CliRunner().invoke(cli.main, ["lessons"])
+
+    assert result.exit_code == 0
+    assert "5 accepted rule(s), 2 already in a lesson" in result.output
+    assert "1 lesson(s) created" in result.output
