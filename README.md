@@ -13,8 +13,9 @@ Runs on your machine by default, with on-device inference via
 per pipeline stage, so you can put a large model on the batch work that reads
 published books without putting your conversation notes anywhere.
 
-> **Status: planning.** The design is complete and the seed corpus is real; no
-> application code is written yet. Start with [docs/PLAN.md](docs/PLAN.md).
+> **Status: planning, requirements accepted.** No application code yet. Start with
+> [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md), then
+> [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md).
 
 ## Why not just read the books
 
@@ -40,6 +41,25 @@ system whose entire value is provenance, that is fatal rather than annoying. So
 every extracted claim must contain a byte-exact substring of the stored source,
 verified by string search rather than trust. A model that invents a quote fails
 deterministically.
+
+## The framework
+
+HTMSW is built on **vulnerability-first disclosure** — you volunteer something modestly
+vulnerable first rather than waiting for the other person to risk it. It does the opening
+they would otherwise have to do themselves.
+
+That plays out in four steps, whose pacing scales to the situation:
+
+1. **Initial disclosure** — a vulnerable, honest admission, sized to context
+2. **Build-on question** — engaging with what *they* revealed, not pivoting back to you
+3. **Connecting micro-disclosure** — a smaller disclosure that links to theirs, deepening
+   rather than resetting the thread
+4. **Earned ask** — the bigger question or offer, appropriate only once real exchange exists
+
+Step 2 is independently corroborated by two separate studies with measured behavioural
+outcomes. Steps 1 and 3 have partial support. **Step 4, the domain pacing, and the
+generosity principle currently rest on two role-play transcripts and are labelled D-tier
+accordingly** — the app is built to test them, not to assert them.
 
 ## How it works
 
@@ -103,7 +123,9 @@ Full reasoning: [docs/DECISIONS.md #15](docs/DECISIONS.md).
 
 | Document | Contents |
 |---|---|
-| [docs/PLAN.md](docs/PLAN.md) | Architecture, data model, phasing. Start here. |
+| [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) | **Start here.** The HTMSW framework, numbered requirements, data model. |
+| [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md) | Phased build plan, executable from a cold start. |
+| [docs/PLAN.md](docs/PLAN.md) | Original architecture. Superseded in part — see REQUIREMENTS.md. |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Decisions taken, with costs; risks that can't be designed away. |
 | [docs/seed/sources.yaml](docs/seed/sources.yaml) | Ten real sources, with acquisition notes. |
 | [docs/seed/rules.yaml](docs/seed/rules.yaml) | Fifteen candidate rules with provenance, tiers, and three conflicts. |

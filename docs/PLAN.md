@@ -1,5 +1,14 @@
 # From Small to Big — plan
 
+> **Partly superseded, 2026-09-22.** The HTMSW framework replaced this document's product
+> definition and phasing. Current requirements are in [REQUIREMENTS.md](REQUIREMENTS.md)
+> and the build sequence is in [IMPLEMENTATION.md](IMPLEMENTATION.md).
+>
+> **Still current here:** §4 Stack, §6 Repo shape, and the local-models and backend-routing
+> sections. **Superseded:** §1–3 (the sources → claims → rules pipeline is deferred to
+> Phase 6) and §5 (phasing). Retained because the deferred pipeline returns in Phase 6 and
+> the reasoning behind the verify gate and evidence tiers still applies. See DECISIONS #16.
+
 A local web app that turns other people's small-talk advice into **rules you have
 endorsed**, then drills you on them until they hold up in real conversations.
 

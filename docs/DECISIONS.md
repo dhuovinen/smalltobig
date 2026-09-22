@@ -291,3 +291,108 @@ asymmetry is deliberate — the cheap path is the safe one.
 The refusal **downgrades to local and continues**. It does not abort the run —
 an error that blocks a debrief teaches you to stop writing debriefs, and the
 debrief is the one part of this app that touches reality (#14).
+
+---
+
+### 16. HTMSW is the content; the ingestion pipeline is deferred
+
+The original design derived its rules from ingested books because there was no authored
+methodology. HTMSW supplies one, tested through role-play rather than literature review.
+
+**Decision:** the framework ships authored, as YAML. `sources → claims → rules` moves to
+Phase 6, where its job is to **validate and extend** the framework rather than produce it.
+
+**Kept, not discarded:** the verify gate (#3), evidence tiers, and conflict records. The
+seed corpus becomes the evidence base — see #20.
+
+**Discarded:** lessons as the unit of work (replaced by scenarios), the generic scenario
+list (replaced by the four domains), Leitner boxes (replaced by per-step counters), and
+the TALK taxonomy as the organising spine (replaced by the four-step sequence).
+
+---
+
+### 17. Abstracted-only persistence
+
+HTMSW requires that scenario data not be persisted. The earlier design required field
+notes stored and weighted 3:1 for mastery. Directly incompatible.
+
+**Decision:** persist the abstraction, discard the prose.
+
+- **Persisted:** persona-cluster flags, domain, per-step attempt/success counters.
+- **Never persisted:** any free text written by the user or describing a third party.
+
+The 3:1 weighting of real conversations over roleplay survives (FR-54) — it was always a
+weighting on *outcomes*, and outcomes are four booleans. Storing the words was never what
+made it work.
+
+**Cost:** you cannot re-read your own debriefs, and a counter cannot be audited back to
+the conversation that moved it. Accepted. **Enforced by test**, not by intention: a
+sentinel string written into intake must appear in no database column after close.
+
+---
+
+### 18. Prep is deterministic; roleplay is the only AI surface
+
+The framework specifies pre-built example phrasings the user adapts, not freeform lines
+generated live. Taken literally, that makes the prep card pure composition from curated
+data.
+
+**Decision:** the prep card makes zero model calls and zero network calls (FR-34).
+
+**Why it is load-bearing:** the MVP ships prep and roleplay together, which doubles the
+scope and the risk. Making prep deterministic isolates *all* model risk in roleplay. If
+the judge disappoints, the prep half still ships and is independently useful. It also
+means the most privacy-sensitive path — target-person intake to prep card — never sends
+anything anywhere.
+
+**Cost:** phrasings must be written by hand, and coverage gaps are real rather than
+papered over by generation. `phrasings.yaml` marks gaps explicitly.
+
+---
+
+### 19. Target-person intake joins the field-note guard; URL fetch is opt-in
+
+#15 guarded `prebrief` and `debrief`. HTMSW introduces something more identifying than
+either: free text about a **named** third party, plus an optional link to their profile —
+a name, an employer, a bio, about someone who has no idea this app exists.
+
+**Decision:** `intake` joins `prebrief` and `debrief` behind
+`STB_SEND_FIELD_NOTES_TO_CLOUD=i-understand`.
+
+**Second, separate issue.** Fetching a supplied LinkedIn URL discloses *to LinkedIn* that
+someone is researching that person, from this user's IP, at this time — a disclosure the
+user did not ask for by pasting a link. The fetch is therefore **opt-in per scenario with
+consent at the point of use**, never a background fetch on paste, and the consent text
+says what the fetch reveals and to whom.
+
+---
+
+### 20. Framework elements carry evidence tiers, including the weak ones
+
+Reviewing HTMSW against the seed corpus produced two findings worth recording.
+
+**Step 2 is independently corroborated by two A-tier studies.** Its definition —
+*"engages directly with what the other person revealed, rather than pivoting back to the
+user"* — splits into two separate findings already in `seed/rules.yaml`:
+`ask-follow-up-questions` (Huang et al. 2017) and `no-boomerasking` (Brooks & Yeomans
+2025). Two research groups, different methods, landing on the two clauses of one
+hand-written step. Step 2 is the highest-confidence element of the framework.
+
+**Step 3 resolves seed conflict #1.** Headlee's `dont-equate-experiences` against Brooks's
+`straightforward-self-disclosure` was logged unresolved. The connecting micro-disclosure
+is the resolution, demonstrated in the Sarah transcript: match a small vulnerability with
+a **comparable, smaller** one that connects rather than one-ups, and keep it off heavy
+topics. That conflict record is updated to `resolved`.
+
+**But the rest of the framework rests on two self-authored transcripts.** Step 4, the
+domain-pacing calibration, and generosity-without-reciprocity have no independent support.
+Two role-plays, written by one person, un-blinded, outcome known in advance. That is a
+starting hypothesis, not a validation.
+
+**Decision:** tier framework elements honestly (REQUIREMENTS.md §2.5) — A for step 2, C
+for steps 1 and 3, **D for step 4, domain pacing, and the generosity principle**. Build
+the app to test them: per-step counters across domains are precisely the instrument, and
+Phase 6 brings the literature to bear.
+
+Tiering your own framework's weakest parts as D is uncomfortable and correct. The
+alternative is an app that cannot tell you when it is wrong.
