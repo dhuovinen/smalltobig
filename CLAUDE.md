@@ -1,8 +1,10 @@
 # From Small to Big — project instructions
 
 Local-first app. Everything runs on one machine for one user; all inference is
-on-device via MLX. **Status: planning.** Design is complete, no application code
-written yet — see `docs/PLAN.md` before proposing anything.
+on-device via MLX. **Status: Phase 1 (source repository).** `stb doctor` and
+ingest (paste / watched folder / URL+text) are implemented and green, with a
+list/read web UI. Zero inference so far — see `docs/PLAN.md` before proposing
+anything past Phase 1 (Claims and the verify gate).
 
 ## Non-negotiables
 
@@ -28,9 +30,6 @@ is a decision to record there, not a refactor.
 
 ## How to run
 
-Nothing to run yet. Phase 0 (`docs/PLAN.md` §5) delivers `stb doctor`, which
-must go green before Phases 1–2 are built on top of it.
-
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev,web]"
@@ -43,8 +42,20 @@ Model servers are run separately, not supervised by this app:
 mlx_lm.server --model <model> --port 3140    # NOT its default 8000; see DECISIONS #2
 ```
 
+Then:
+
+```bash
+stb doctor      # reaches the chat server, round-trips a generation,
+                # loads the embedding model, reports cosine similarity
+stb ingest      # picks up files dropped in STB_DATA_DIR/inbox (default
+                # ~/SmallToBig/inbox/), moves them to sources/<id>/
+stb serve       # web UI at http://127.0.0.1:3041 — list sources, paste
+                # text to ingest, check the inbox, read the normalized text
+```
+
 Config is `STB_*` environment variables, with `.env` **auto-loaded** — env vars
-override the file.
+override the file. Phase 1 stops at "list and read"; nothing in Phase 2
+(claims, the verify gate) exists yet.
 
 ## Build / test / lint
 
