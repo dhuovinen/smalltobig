@@ -41,6 +41,34 @@ CREATE TABLE IF NOT EXISTS claims (
 );
 
 CREATE INDEX IF NOT EXISTS idx_claims_source_id ON claims(source_id);
+
+CREATE TABLE IF NOT EXISTS rules (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    imperative TEXT NOT NULL,
+    rationale TEXT NOT NULL,
+    when_to_apply TEXT NOT NULL,
+    antipattern TEXT NOT NULL,
+    evidence_tier TEXT NOT NULL,
+    status TEXT NOT NULL,
+    claims_json TEXT NOT NULL,
+    rubric_json TEXT NOT NULL,
+    prerequisites_json TEXT NOT NULL,
+    superseded_by TEXT,
+    created_at TEXT NOT NULL,
+    decided_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS conflicts (
+    id TEXT PRIMARY KEY,
+    between_json TEXT NOT NULL,
+    note TEXT NOT NULL,
+    status TEXT NOT NULL,
+    proposed_resolution TEXT,
+    resolution TEXT,
+    created_at TEXT NOT NULL,
+    resolved_at TEXT
+);
 """
 
 

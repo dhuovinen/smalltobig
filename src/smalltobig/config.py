@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     # directory outside the repo, per docs/PLAN.md §2 Stage 1 and §6.
     data_dir: Path = Path.home() / "SmallToBig"
 
+    # Where the git checkout lives, for the git-tracked output directories
+    # (rules/, lessons/, scenarios/ — docs/PLAN.md §6). Defaults to the
+    # working directory `stb` is run from.
+    repo_root: Path = Path.cwd()
+
     @property
     def inbox_dir(self) -> Path:
         return self.data_dir / "inbox"
@@ -48,6 +53,10 @@ class Settings(BaseSettings):
     @property
     def db_path(self) -> Path:
         return self.data_dir / "smalltobig.db"
+
+    @property
+    def rules_dir(self) -> Path:
+        return self.repo_root / "rules"
 
 
 def get_settings() -> Settings:

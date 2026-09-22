@@ -154,6 +154,41 @@ five hand-written claims that should cluster into two rules, and check whether
 your chosen model gets it. Cheap, and it tells you early which model tier you
 need.
 
+**Tested live in Phase 3 (2026-09-22), against `mlx_lm.server` and
+`mlx-community/all-MiniLM-L6-v2-bf16` embeddings, on real ingested/extracted
+claims — not synthetic fixtures:**
+
+- **Clustering threshold needed real recalibration, not just "tuned by hand on
+  the seed set" as an abstract instruction.** The code shipped with a guessed
+  default of 0.75. Measured cosine similarity between paraphrases of genuinely
+  related claims (two independent phrasings of "ask follow-up questions") came
+  back 0.40–0.56 with this embedding model — nothing came close to 0.75.
+  `embed/cluster.py`'s default is now 0.5, `stb synthesize --threshold` exposes
+  it, and even at 0.5 some true near-duplicates (0.498) still land in separate
+  clusters, producing redundant candidate rules rather than one merged rule.
+  Small general-purpose embedding models compress semantic distance more than
+  intuition suggests — don't trust a threshold you haven't measured against
+  your actual model.
+- **A 0.5B model (Qwen2.5-0.5B-Instruct-4bit) failed at rule synthesis exactly
+  as predicted** — not by being vague, but by returning structurally broken
+  output (`"evidence_tier": ["A", "B", "C"]`, a list instead of one letter;
+  placeholder-like imperatives such as `"write one rule"`). Pydantic validation
+  caught every instance and `draft_rule_from_cluster` returned `None`, so
+  nothing bad got written — the pipeline degraded to "0 rules drafted," not
+  garbage rules. This is the gate working, not a bug, but it means the 0.5B
+  tier is unusable for this stage.
+- **A 3B model (Qwen2.5-3B-Instruct-4bit) drafted seven coherent, plausible
+  candidate rules** from the same claims — correct JSON, sensible imperatives
+  and rubrics, valid single-letter tiers. Quality was good enough to be worth a
+  human's review time, not obviously wrong. This is the cheapest working
+  configuration found so far; it's plausible something between 0.5B and 3B
+  also works, but that wasn't tested.
+
+Net: the mitigation in the paragraph above is confirmed correct, not just
+theoretically reasonable — synthesis needs a model a full tier above what
+`stb doctor`'s basic round-trip needs, and the threshold guess needed real
+measurement, not just a reasonable-sounding number.
+
 ### 12. The conflict detector is the least certain component
 
 Detecting that two imperatives are incompatible requires the model to reason
@@ -166,6 +201,29 @@ search will not find at all.
 **Fallback if the model can't do it:** surface near-neighbour rule pairs with
 diverging imperatives and let you judge. Lower ambition, still useful, and the
 conflict log stays the app's best artifact either way.
+
+**Tested live in Phase 3 (2026-09-22), with the 3B model above:** this is the
+component that disappointed. The default similarity band (0.55–0.92) also
+needed recalibrating down to 0.4–0.85 for the same reason as #11's clustering
+threshold — measured similarity between genuinely related rule imperatives
+topped out around 0.51. Once candidates were actually being found, though, the
+judge itself was unreliable: **all 9 candidate pairs from the live run were
+judged `"conflict": true`**, including pairs with no real tension at all
+("follow Celeste Headlee's tips" vs "start questions with who/what/when") —
+each with a fluent but confabulated note explaining a contradiction that isn't
+there. Rewriting the prompt with an explicit contrastive example (one
+worked "not a conflict" case, one worked "genuine conflict" case) did not fix
+it — same 3B model, same false positive, on a pair a human would reject in two
+seconds. This looks like a harder failure mode than #11's: the model isn't
+short of information the way it was for evidence tiers, it's just bad at the
+specific judgment call, and a clearer prompt didn't move it.
+
+This validates the fallback above rather than requiring a new one — the
+proposed resolution is never auto-applied, `resolution` is only ever written
+by a human (see the non-negotiable in CLAUDE.md), and a false "conflict: true"
+costs a few seconds of review, not a corrupted rule set. But budget more
+review time here than for rule candidates, and don't assume a bigger-than-3B
+model fixes this without testing it — #11's 3B result doesn't transfer to #12.
 
 ### 13. Fifteen seed rules is not enough, and three of the ten sources are paywalled
 

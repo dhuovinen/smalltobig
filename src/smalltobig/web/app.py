@@ -13,6 +13,8 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from smalltobig.web.routes.claims import router as claims_router
+from smalltobig.web.routes.conflicts import router as conflicts_router
+from smalltobig.web.routes.rules import router as rules_router
 from smalltobig.web.routes.sources import router as sources_router
 
 if TYPE_CHECKING:
@@ -29,4 +31,6 @@ def create_app(settings: Settings) -> FastAPI:
     )
     app.include_router(sources_router)
     app.include_router(claims_router)
+    app.include_router(rules_router)
+    app.include_router(conflicts_router)
     return app

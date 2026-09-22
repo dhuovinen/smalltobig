@@ -11,11 +11,14 @@ conversation.
 Everything runs on your machine. All inference is on-device via
 [MLX](https://github.com/ml-explore/mlx). Nothing you log leaves it.
 
-> **Status: Phase 2 (claims and the verify gate).** The design is complete and
-> the seed corpus is real. `stb ingest` gets a source in; `stb extract` chunks
-> it, asks the model for claims, and keeps only the ones it can find
-> byte-for-byte in the source — reject the rest, and show you both in a
-> review queue. Start with [docs/PLAN.md](docs/PLAN.md).
+> **Status: Phase 3 (rules).** The design is complete and the seed corpus is
+> real. `stb synthesize` clusters accepted claims, drafts candidate rules and
+> proposes conflicts — you accept, reject, supersede, and resolve conflicts in
+> the web UI, and an accepted rule is exported to `rules/<id>.yaml`, plain and
+> git-tracked. This step needed a real model, not a toy one: live testing
+> found a 3B-class local model workable and a 0.5B one wasn't (see
+> [docs/DECISIONS.md](docs/DECISIONS.md) #11). Start with
+> [docs/PLAN.md](docs/PLAN.md).
 
 ## Why not just read the books
 

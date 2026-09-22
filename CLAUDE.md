@@ -1,10 +1,15 @@
 # From Small to Big — project instructions
 
 Local-first app. Everything runs on one machine for one user; all inference is
-on-device via MLX. **Status: Phase 2 (claims and the verify gate).** `stb
-doctor`, ingest (paste / watched folder / URL+text), and `stb extract` are
-implemented and green, with list/read + a claim review queue in the web UI —
-see `docs/PLAN.md` before proposing anything past Phase 2 (Rules).
+on-device via MLX. **Status: Phase 3 (rules).** `stb doctor`, ingest, `stb
+extract` and `stb synthesize` are implemented and green — clustering, rule
+drafting, conflict detection, and the accept/reject/supersede workflow with
+YAML export to `rules/`. See `docs/PLAN.md` before proposing anything past
+Phase 3 (Lessons and drills). **Read `docs/DECISIONS.md` #11 and #12 before
+touching `synth/` or `embed/cluster.py`** — both were live-tested against real
+models on 2026-09-22 and the findings (threshold recalibration, which model
+tier actually works, the conflict judge's real failure mode) are load-bearing,
+not speculative.
 
 This branch stays on the original `docs/PLAN.md` direction rather than the
 HTMSW pivot on `origin/main` (see the Phase 0+1 commit message) — check
@@ -55,14 +60,18 @@ stb ingest      # picks up files dropped in STB_DATA_DIR/inbox (default
                 # ~/SmallToBig/inbox/), moves them to sources/<id>/
 stb extract <source_id>   # chunk, ask the model for claims, verify each by
                 # exact substring match, report the rejection rate
-stb serve       # web UI at http://127.0.0.1:3041 — list sources, paste
-                # text to ingest, check the inbox, read normalized text,
-                # and review each source's claims (accepted + rejected)
+stb synthesize  # cluster accepted claims into candidate rules, propose
+                # conflicts — needs a bigger model than doctor/extract;
+                # see DECISIONS.md #11 before assuming your model can do this
+stb serve       # web UI at http://127.0.0.1:3041 — sources, claims review,
+                # rules (accept/reject/supersede), conflicts (resolve)
 ```
 
 Config is `STB_*` environment variables, with `.env` **auto-loaded** — env vars
-override the file. Phase 2 stops at the claim review queue; nothing in
-Phase 3 (rules, clustering, conflicts, accept/reject) exists yet.
+override the file. Accepting a rule writes `rules/<id>.yaml` in `STB_REPO_ROOT`
+(default: cwd) — git-tracked, one-way sync from the database, never the other
+way (see store/yaml_sync.py). Phase 3 stops at rules/conflicts; nothing in
+Phase 4 (lessons, drills, Leitner boxes) exists yet.
 
 ## Build / test / lint
 

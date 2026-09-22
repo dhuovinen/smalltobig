@@ -35,9 +35,9 @@ class Source(BaseModel):
     original_filename: str | None = None
 
 
-def slugify(title: str, *, max_words: int = 4) -> str:
+def slugify(title: str, *, max_words: int | None = 4) -> str:
     words = re.findall(r"[a-z0-9]+", title.lower())
-    return "-".join(words[:max_words]) or "untitled"
+    return "-".join(words if max_words is None else words[:max_words]) or "untitled"
 
 
 def generate_source_id(title: str, sha256: str) -> str:

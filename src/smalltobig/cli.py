@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from typing import cast
 
 import click
 
@@ -72,6 +73,59 @@ def extract(source_id: str) -> None:
     click.echo(
         f"{summary.accepted} accepted, {summary.rejected} rejected "
         f"({summary.rejection_rate:.0%} rejection rate)"
+    )
+
+
+@main.command()
+@click.option(
+    "--threshold",
+    type=float,
+    default=None,
+    help="Clustering similarity cutoff (0-1). Defaults to a value tuned for "
+    "STB_EMBEDDING_MODEL's default model — tune by hand for a different one "
+    "(docs/PLAN.md §2 Stage 3).",
+)
+def synthesize(threshold: float | None) -> None:
+    """Cluster accepted claims into candidate rules and propose conflicts."""
+    from smalltobig.llm.openai_compat import OpenAICompatClient
+    from smalltobig.store import db
+    from smalltobig.synth.pipeline import synthesize_rules
+
+    settings = get_settings()
+    try:
+        from smalltobig.embed.mlx_backend import EmbeddingModel
+    except ImportError as exc:
+        click.echo(
+            f"mlx-embeddings not installed ({exc}); "
+            "run `pip install -e '.[mlx]'` (Apple Silicon only)",
+            err=True,
+        )
+        sys.exit(1)
+
+    embedding_model = EmbeddingModel(settings.embedding_model)
+
+    def embed(texts: list[str]) -> list[list[float]]:
+        return cast("list[list[float]]", embedding_model.embed(texts).tolist())
+
+    conn = db.connect(settings.db_path)
+    try:
+        with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+            summary = (
+                synthesize_rules(conn, client, embed, cluster_threshold=threshold)
+                if threshold is not None
+                else synthesize_rules(conn, client, embed)
+            )
+    finally:
+        conn.close()
+
+    click.echo(f"{summary.accepted_claims} accepted claim(s), {summary.clusters} cluster(s)")
+    click.echo(
+        f"{summary.rules_drafted} rule(s) drafted, "
+        f"{summary.rules_skipped_existing} already covered by an existing rule"
+    )
+    click.echo(
+        f"{summary.conflict_candidates} near-neighbour pair(s) checked, "
+        f"{summary.conflicts_proposed} conflict(s) proposed"
     )
 
 

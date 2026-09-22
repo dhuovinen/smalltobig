@@ -10,10 +10,11 @@ around it, which small local models do often enough to plan for.
 from __future__ import annotations
 
 import json
-import re
 from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, ValidationError
+
+from smalltobig.llm.json_extract import extract_json_array
 
 if TYPE_CHECKING:
     from smalltobig.llm.client import LlmClient
@@ -31,22 +32,11 @@ SYSTEM_PROMPT = (
     "If the passage contains no clear claims, return []."
 )
 
-_JSON_ARRAY = re.compile(r"\[.*\]", re.DOTALL)
-
 
 class ExtractedClaim(BaseModel):
     verbatim: str
     paraphrase: str
     claim_type: ClaimTypeLiteral
-
-
-def _parse_claims_json(reply: str) -> list[object]:
-    match = _JSON_ARRAY.search(reply)
-    candidate = match.group(0) if match else reply
-    data = json.loads(candidate)
-    if not isinstance(data, list):
-        raise ValueError("model reply was not a JSON array")
-    return data
 
 
 def extract_claims_from_chunk(client: LlmClient, chunk_text: str) -> list[ExtractedClaim]:
@@ -60,7 +50,7 @@ def extract_claims_from_chunk(client: LlmClient, chunk_text: str) -> list[Extrac
     )
 
     try:
-        raw_items = _parse_claims_json(reply)
+        raw_items = extract_json_array(reply)
     except (json.JSONDecodeError, ValueError):
         return []
 

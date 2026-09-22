@@ -59,6 +59,26 @@ def list_by_source(conn: sqlite3.Connection, source_id: str) -> list[Claim]:
     return [_row_to_claim(row) for row in rows]
 
 
+def list_accepted(conn: sqlite3.Connection) -> list[Claim]:
+    """Every accepted claim across all sources — the pool Stage 3
+    synthesis clusters from (docs/PLAN.md §2 Stage 3)."""
+    rows = conn.execute(
+        "SELECT * FROM claims WHERE status = ? ORDER BY source_id, chunk_index, id",
+        (ClaimStatus.ACCEPTED.value,),
+    ).fetchall()
+    return [_row_to_claim(row) for row in rows]
+
+
+def get_many(conn: sqlite3.Connection, claim_ids: list[str]) -> list[Claim]:
+    if not claim_ids:
+        return []
+    placeholders = ",".join("?" for _ in claim_ids)
+    rows = conn.execute(
+        f"SELECT * FROM claims WHERE id IN ({placeholders})", claim_ids  # noqa: S608
+    ).fetchall()
+    return [_row_to_claim(row) for row in rows]
+
+
 def delete_by_source(conn: sqlite3.Connection, source_id: str) -> None:
     conn.execute("DELETE FROM claims WHERE source_id = ?", (source_id,))
     conn.commit()
