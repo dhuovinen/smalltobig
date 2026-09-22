@@ -17,6 +17,9 @@
   <tr><th>original filename</th><td>{{ source.original_filename }}</td></tr>
   {% endif %}
 </table>
+<div class="actions">
+  <a class="button" href="/sources/{{ source.id }}/claims">Claims</a>
+</div>
 <h2>Normalized text</h2>
 <pre class="source-text">{{ normalized_text }}</pre>
 {% endblock %}

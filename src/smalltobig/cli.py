@@ -50,6 +50,32 @@ def ingest() -> None:
 
 
 @main.command()
+@click.argument("source_id")
+def extract(source_id: str) -> None:
+    """Extract claims from a source and verify each against its text."""
+    from smalltobig.extract.pipeline import UnknownSourceError, extract_source
+    from smalltobig.llm.openai_compat import OpenAICompatClient
+    from smalltobig.store import db
+
+    settings = get_settings()
+    conn = db.connect(settings.db_path)
+    try:
+        with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+            summary = extract_source(conn, settings, client, source_id)
+    except UnknownSourceError as exc:
+        click.echo(str(exc), err=True)
+        sys.exit(1)
+    finally:
+        conn.close()
+
+    click.echo(f"{summary.chunks} chunk(s), {summary.proposed} claim(s) proposed")
+    click.echo(
+        f"{summary.accepted} accepted, {summary.rejected} rejected "
+        f"({summary.rejection_rate:.0%} rejection rate)"
+    )
+
+
+@main.command()
 @click.option("--host", default="127.0.0.1", show_default=True)
 @click.option("--port", type=int, default=None, help="Defaults to STB_PORT.")
 def serve(host: str, port: int | None) -> None:

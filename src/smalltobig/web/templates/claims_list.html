@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Claims — {{ source.title }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="/sources/{{ source.id }}">&larr; {{ source.title }}</a></p>
+<h1>Claims</h1>
+<p class="muted">
+  {{ claims|length }} proposed &middot; {{ accepted }} accepted &middot; {{ rejected }} rejected
+  {% if claims %}
+  &middot; {{ "%.0f"|format((rejected / claims|length) * 100) }}% rejection rate
+  {% endif %}
+</p>
+<form method="post" action="/sources/{{ source.id }}/extract">
+  <button type="submit">{{ "Re-extract" if claims else "Extract claims" }}</button>
+</form>
+{% if claims %}
+<table>
+  <thead>
+    <tr><th>Status</th><th>Type</th><th>Verbatim</th><th>Paraphrase</th></tr>
+  </thead>
+  <tbody>
+    {% for claim in claims %}
+    <tr>
+      <td>
+        <span class="badge {{ 'ok' if claim.status.value == 'accepted' else 'bad' }}">
+          {{ claim.status.value }}
+        </span>
+        {% if claim.rejection_reason %}
+        <div class="muted">{{ claim.rejection_reason }}</div>
+        {% endif %}
+      </td>
+      <td>{{ claim.claim_type.value }}</td>
+      <td><q>{{ claim.verbatim }}</q></td>
+      <td>{{ claim.paraphrase }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">No claims extracted yet.</p>
+{% endif %}
+{% endblock %}

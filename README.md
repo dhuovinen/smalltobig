@@ -11,11 +11,11 @@ conversation.
 Everything runs on your machine. All inference is on-device via
 [MLX](https://github.com/ml-explore/mlx). Nothing you log leaves it.
 
-> **Status: Phase 1 (source repository).** The design is complete and the seed
-> corpus is real. `stb doctor` proves the model backends work; `stb ingest` /
-> `stb serve` let you paste text, drop files in a watched folder, or record a
-> URL, then list and read what's been ingested — no inference yet. Start with
-> [docs/PLAN.md](docs/PLAN.md).
+> **Status: Phase 2 (claims and the verify gate).** The design is complete and
+> the seed corpus is real. `stb ingest` gets a source in; `stb extract` chunks
+> it, asks the model for claims, and keeps only the ones it can find
+> byte-for-byte in the source — reject the rest, and show you both in a
+> review queue. Start with [docs/PLAN.md](docs/PLAN.md).
 
 ## Why not just read the books
 

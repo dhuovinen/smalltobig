@@ -1,10 +1,14 @@
 # From Small to Big — project instructions
 
 Local-first app. Everything runs on one machine for one user; all inference is
-on-device via MLX. **Status: Phase 1 (source repository).** `stb doctor` and
-ingest (paste / watched folder / URL+text) are implemented and green, with a
-list/read web UI. Zero inference so far — see `docs/PLAN.md` before proposing
-anything past Phase 1 (Claims and the verify gate).
+on-device via MLX. **Status: Phase 2 (claims and the verify gate).** `stb
+doctor`, ingest (paste / watched folder / URL+text), and `stb extract` are
+implemented and green, with list/read + a claim review queue in the web UI —
+see `docs/PLAN.md` before proposing anything past Phase 2 (Rules).
+
+This branch stays on the original `docs/PLAN.md` direction rather than the
+HTMSW pivot on `origin/main` (see the Phase 0+1 commit message) — check
+`git log --oneline main..origin/main` before assuming the two have converged.
 
 ## Non-negotiables
 
@@ -49,13 +53,16 @@ stb doctor      # reaches the chat server, round-trips a generation,
                 # loads the embedding model, reports cosine similarity
 stb ingest      # picks up files dropped in STB_DATA_DIR/inbox (default
                 # ~/SmallToBig/inbox/), moves them to sources/<id>/
+stb extract <source_id>   # chunk, ask the model for claims, verify each by
+                # exact substring match, report the rejection rate
 stb serve       # web UI at http://127.0.0.1:3041 — list sources, paste
-                # text to ingest, check the inbox, read the normalized text
+                # text to ingest, check the inbox, read normalized text,
+                # and review each source's claims (accepted + rejected)
 ```
 
 Config is `STB_*` environment variables, with `.env` **auto-loaded** — env vars
-override the file. Phase 1 stops at "list and read"; nothing in Phase 2
-(claims, the verify gate) exists yet.
+override the file. Phase 2 stops at the claim review queue; nothing in
+Phase 3 (rules, clustering, conflicts, accept/reject) exists yet.
 
 ## Build / test / lint
 

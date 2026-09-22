@@ -25,6 +25,22 @@ CREATE TABLE IF NOT EXISTS sources (
     original_filename TEXT,
     raw_extension TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS claims (
+    id TEXT PRIMARY KEY,
+    source_id TEXT NOT NULL REFERENCES sources(id),
+    chunk_index INTEGER NOT NULL,
+    verbatim TEXT NOT NULL,
+    paraphrase TEXT NOT NULL,
+    claim_type TEXT NOT NULL,
+    status TEXT NOT NULL,
+    start INTEGER,
+    end INTEGER,
+    rejection_reason TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_claims_source_id ON claims(source_id);
 """
 
 

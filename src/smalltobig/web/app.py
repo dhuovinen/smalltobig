@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from smalltobig.web.routes.claims import router as claims_router
 from smalltobig.web.routes.sources import router as sources_router
 
 if TYPE_CHECKING:
@@ -27,4 +28,5 @@ def create_app(settings: Settings) -> FastAPI:
         name="static",
     )
     app.include_router(sources_router)
+    app.include_router(claims_router)
     return app
