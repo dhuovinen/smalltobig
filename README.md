@@ -8,8 +8,10 @@ have endorsed**, each traceable to the exact sentence it came from. Then it
 drills you on them, and tracks which ones survive contact with a real
 conversation.
 
-Everything runs on your machine. All inference is on-device via
-[MLX](https://github.com/ml-explore/mlx). Nothing you log leaves it.
+Runs on your machine by default, with on-device inference via
+[MLX](https://github.com/ml-explore/mlx). Cloud models are supported too — chosen
+per pipeline stage, so you can put a large model on the batch work that reads
+published books without putting your conversation notes anywhere.
 
 > **Status: planning.** The design is complete and the seed corpus is real; no
 > application code is written yet. Start with [docs/PLAN.md](docs/PLAN.md).
@@ -66,6 +68,37 @@ And one structural defense: a rule cannot reach top mastery on drills alone. The
 obvious failure of an app like this is that you get very good at talking to a
 language model.
 
+## Where your data goes
+
+A fresh install sends nothing anywhere. Every stage runs locally until you
+change it, and you change it one stage at a time:
+
+```bash
+STB_LLM_BACKEND=local                  # default for everything
+STB_LLM_BACKEND_SYNTHESIZE=openai      # this stage only
+```
+
+That granularity exists because the stages are not comparable. Extraction and
+synthesis read the books and papers you ingested — published material, and the
+place where a larger model genuinely helps. Drills and roleplay involve your own
+practice text. Pre-briefs and debriefs are different in kind:
+
+> Field notes describe real conversations with real, named people. Those people
+> are not users of this app. They did not agree to have what they told you sent
+> to a third-party API, and they cannot be asked afterwards.
+
+So those two stages take a second, separate acknowledgement before they will use
+a cloud backend — `STB_SEND_FIELD_NOTES_TO_CLOUD=i-understand`. Without it the
+app runs them locally and tells you it did, rather than quietly obeying. Setting
+a cloud backend to debug synthesis quality is a reasonable thing to do; it
+should not, as a side effect, start shipping other people's confidences
+offsite.
+
+Any cloud-routed stage prints what leaves and what stays at startup, every run
+— not a first-run dialog you dismiss once and forget.
+
+Full reasoning: [docs/DECISIONS.md #15](docs/DECISIONS.md).
+
 ## Documentation
 
 | Document | Contents |
@@ -83,9 +116,14 @@ verify gate.
 
 ## Requirements
 
-- macOS on Apple Silicon (MLX is Apple Silicon only)
 - Python ≥ 3.11
-- `mlx-lm` for chat, `mlx-embeddings` for embeddings
+- **For local inference:** macOS on Apple Silicon, plus `mlx-lm` for chat and
+  `mlx-embeddings` for embeddings. Installed via the `[mlx]` extra.
+- **For cloud inference:** an API key for any OpenAI-compatible endpoint. Works
+  on any platform.
+
+Local and cloud are not exclusive — the common setup is local for everything
+with one stage pointed at a larger hosted model.
 
 ## Licence
 

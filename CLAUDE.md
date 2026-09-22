@@ -25,6 +25,12 @@ is a decision to record there, not a refactor.
    talking to a language model.
 6. **No source-text export path.** Extracts of copyrighted material are stored
    for personal study; there is no feature that redistributes them.
+7. **Backends are per-stage and default to local.** `prebrief` and `debrief`
+   additionally require `STB_SEND_FIELD_NOTES_TO_CLOUD=i-understand` before any
+   cloud backend touches them, and refusing downgrades to local and continues
+   rather than aborting. Never collapse this to a single global switch and never
+   let a stage silently use a backend the user did not select for it — field
+   notes contain the words of people who are not users of this app.
 
 ## How to run
 

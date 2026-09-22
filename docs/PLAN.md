@@ -271,15 +271,27 @@ looks correct, and is ignored. Auto-loading deletes that failure mode outright.
 
 ```
 chat        mlx_lm.server → http://127.0.0.1:3140/v1   (OpenAI-compatible)
+            or any hosted OpenAI-compatible endpoint, selected per stage
 embeddings  mlx-embeddings, in-process (it is a library, not a server)
 stt         mlx-whisper, in-process, Phase 7 only
 ```
 
+Backends are chosen **per pipeline stage**, not once globally, and the default
+for every stage is local. The stages carry very different risk — `synthesize`
+reads published books, `debrief` records what a named person told you in
+confidence — so a single switch would force one decision onto eight
+incomparable cases. `STB_LLM_BACKEND` sets the default, `STB_LLM_BACKEND_<STAGE>`
+overrides one, and the two field-note stages need a second acknowledgement
+before they will leave the machine at all. Full policy and the exact warning
+text: [DECISIONS.md #15](DECISIONS.md).
+
 Two things to know about this split:
 
 Chat goes over HTTP through an OpenAI-compatible client, so the same code runs
-against Ollama (`:11434/v1`) or LM Studio (`:1234/v1`) by changing
-`STB_LLM_BASE_URL`. The port is pinned off `mlx_lm.server`'s default of 8000,
+against Ollama (`:11434/v1`), LM Studio (`:1234/v1`) or a hosted provider by
+changing `STB_LLM_BASE_URL`. That uniformity is why per-stage routing costs
+almost nothing to implement — it is a base URL and a key per stage, not a second
+code path. The port is pinned off `mlx_lm.server`'s default of 8000,
 which is the most contended port on a dev machine — see DECISIONS.md #2. Worth keeping that seam clean — you will want a bigger model
 for rule synthesis than for drill scoring, and possibly a hosted one for a
 one-off backfill.

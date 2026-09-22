@@ -193,3 +193,101 @@ anyone.
 **Worth considering:** pulling the debrief log forward to Phase 4, before drills.
 It is the cheapest piece in the whole project (a text box and an LLM extraction
 call) and the only one that measures the thing you actually want.
+
+---
+
+## Added after the initial design
+
+### 15. Cloud models are supported, per stage, and never by accident
+
+Both local and cloud backends are first-class. The choice is made **per
+pipeline stage**, not once globally, because the stages do not carry remotely
+comparable risk.
+
+| Stage | What would be sent to the provider | Whose words are they |
+|---|---|---|
+| `extract` | Chunks of ingested sources | Published authors |
+| `synthesize` | Claim paraphrases, for clustering and rule drafting | Published authors |
+| `conflicts` | Rule imperatives | Published authors |
+| `drill` | Your written answer to a prompt | Yours |
+| `roleplay` | Your turns in a simulated conversation | Yours |
+| `judge` | A roleplay transcript | Yours |
+| `prebrief` | Who you are about to meet and what you plan to say | Yours **and theirs** |
+| `debrief` | Your account of a real conversation that happened | Yours **and theirs** |
+
+The top three rows process published books and papers. Sending those to a
+hosted model is an ordinary API call over material that is already public, and
+it is exactly where a larger model earns its cost (see #11 — rule synthesis is
+the hardest reasoning in the project and the step most likely to defeat a 4-bit
+8B model).
+
+The bottom two rows are categorically different, and not because they are
+embarrassing. **They contain information about people who are not users of this
+app.** A debrief saying who you spoke to at an offsite, what they told you about
+their job, their divorce, their health — that is third-party personal data,
+disclosed to you in confidence in a social setting, by someone with no idea this
+software exists and no opportunity to object. Your own notes are yours to route
+wherever you like. Their words are not.
+
+**Decision:**
+
+- Default is `local` for every stage. A fresh install sends nothing anywhere.
+- `STB_LLM_BACKEND` sets a global default; `STB_LLM_BACKEND_<STAGE>` overrides
+  one stage.
+- Routing `prebrief` or `debrief` to a cloud backend requires a **second,
+  separate acknowledgement** — `STB_SEND_FIELD_NOTES_TO_CLOUD=i-understand`.
+  Without it the app refuses and runs those two stages locally rather than
+  silently doing what was asked.
+- Any cloud-routed stage prints what leaves and what does not, at startup, every
+  time. Not a first-run dialog that gets dismissed and forgotten.
+
+**Why a second acknowledgement rather than one more env var:** setting
+`STB_LLM_BACKEND=openai` is a plausible thing to do while debugging synthesis
+quality, and it is a reasonable thing to want. It should not, as a side effect,
+begin shipping other people's disclosed confidences to a third party. The two
+settings guard different decisions, so they are two settings, and the second one
+states what it is consenting to in the value itself.
+
+**Cost:** more configuration surface than a single switch, and a user who
+genuinely wants everything in the cloud has to say so twice. Accepted. The
+asymmetry is deliberate — the cheap path is the safe one.
+
+**Warning text, startup, any cloud-routed stage:**
+
+```
+!  Cloud backend active
+
+   synthesize, extract  ->  openai:gpt-5  (api.openai.com)
+   everything else      ->  local  (mlx, 127.0.0.1:3140)
+
+   Sent to api.openai.com: extracts of the sources you have ingested.
+   Published material, not your notes.
+
+   Staying on this machine: your drill answers, roleplay transcripts,
+   pre-briefs and field notes.
+```
+
+**Refusal text, `prebrief`/`debrief` routed to cloud without the acknowledgement:**
+
+```
+!  Refusing to send field notes to a cloud model. Running these locally instead.
+
+   Field notes and pre-briefs describe real conversations with real, named
+   people. Those people are not users of this app. They have not agreed to
+   have what they told you sent to a third-party API, and they cannot be
+   asked after the fact.
+
+   This is the most sensitive data From Small to Big holds. It is the one
+   thing that stays on your machine unless you say otherwise in as many words.
+
+   To route them to the cloud anyway:
+       STB_SEND_FIELD_NOTES_TO_CLOUD=i-understand
+
+   Usually the better answer: leave these local and put only `synthesize` in
+   the cloud. That is the stage a bigger model actually helps, and it reads
+   published books rather than your notes.
+```
+
+The refusal **downgrades to local and continues**. It does not abort the run —
+an error that blocks a debrief teaches you to stop writing debriefs, and the
+debrief is the one part of this app that touches reality (#14).
