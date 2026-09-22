@@ -1,0 +1,363 @@
+# Seed candidate rules for From Small to Big.
+#
+# ALL of these are status: candidate and verified: false. They were derived from
+# secondary summaries and abstracts on 2026-09-19, not from primary text read in
+# full. `basis` therefore paraphrases what the source is reported to claim — it is
+# never a quotation, and no `claims:` ids exist yet because nothing has been
+# ingested or span-verified.
+#
+# Purpose: exercise Phase 3's accept/reject workflow, seed the conflict log, and
+# give you a real arbitration queue on day one. Purpose is NOT to be trusted.
+#
+# Categories follow Brooks's TALK taxonomy plus `approach` for the
+# getting-into-the-conversation rules TALK doesn't cover.
+
+rules:
+  # ────────────────────────── Tier A ──────────────────────────
+  - id: ask-follow-up-questions
+    name: Ask follow-up questions, not new ones
+    category: asking
+    imperative: When they finish answering, ask about what they just said before introducing any new topic.
+    rationale: >
+      Follow-ups specifically — not question volume generally — signal
+      responsiveness: listening, understanding, validation, care. Responsiveness
+      is the mechanism that produces liking.
+    when_to_apply: Every exchange after the opening two turns.
+    antipattern: Answering their answer with an unrelated question of your own.
+    evidence_tier: A
+    status: candidate
+    verified: false
+    sources: [src_huang_2017_questions]
+    basis: >
+      Reported across three studies including 110 speed-daters and 2,000+
+      conversations; follow-up question count predicted second-date agreement,
+      mediated by perceived responsiveness. Notably, participants did not
+      anticipate that asking questions would increase liking.
+    rubric:
+      - id: asked_followup
+        check: Did you ask at least one question referencing content from their previous turn?
+      - id: no_topic_jump
+        check: Did you avoid introducing an unrelated topic immediately after their answer?
+
+  - id: no-boomerasking
+    name: Don't answer your own question
+    category: asking
+    imperative: After they answer your question, follow up on their answer — do not pivot to your own answer to it.
+    rationale: >
+      The ask-then-self-answer sequence reads as insincere and disinterested,
+      even though the person doing it believes it is building rapport. Plain
+      self-disclosure is better received than disclosure disguised as curiosity.
+    when_to_apply: Immediately after any question you asked has been answered.
+    antipattern: >
+      Three named forms — ask-bragging (follow with something positive about
+      yourself), ask-complaining (something negative), ask-sharing (something
+      neutral). "How was your weekend?" → they answer → "Mine was amazing, I was
+      in Lisbon."
+    evidence_tier: A
+    status: candidate
+    verified: false
+    sources: [src_brooks_yeomans_2025_boomerasking]
+    basis: >
+      Reported to find boomeraskers perceived as insincere; people preferred
+      partners who straightforwardly self-disclosed over those who boomerasked.
+    rubric:
+      - id: no_self_answer
+        check: After their answer, did you avoid immediately disclosing your own answer to that same question?
+      - id: followed_up_instead
+        check: Did the turn after their answer engage with their content?
+
+  - id: prepare-topics-in-advance
+    name: Spend thirty seconds on topics before you walk in
+    category: topics
+    imperative: Before an event, think of two or three things you could talk about. Thirty seconds is enough.
+    rationale: >
+      Almost no preparation is needed for a measurable effect on both
+      enjoyment and anxiety. The cost is trivially low and people skip it anyway.
+    when_to_apply: Before any event where you'll meet people. Also the pre-brief card's core job.
+    antipattern: Walking in cold and improvising topic selection under social load.
+    evidence_tier: A
+    status: candidate
+    verified: false
+    sources: [src_brooks_talk_book, src_hbr_keys_great_conversation]
+    basis: >
+      Brooks's research is reported to show ~30 seconds of advance topic
+      thinking produces more enjoyable, less anxious, smoother conversations.
+    rubric:
+      - id: had_topics
+        check: Did you name at least two prepared topics before the interaction?
+
+  - id: expect-better-than-you-fear
+    name: Your forecast is wrong in a known direction
+    category: approach
+    imperative: When you predict an approach will go badly, discount that prediction — it is biased low, reliably and measurably.
+    rationale: >
+      Reluctance to reach out comes from miscalibrated forecasting, not from
+      accurate reading of the situation. Three mechanisms drive it: you evaluate
+      yourself on competence while they evaluate you on warmth; you imagine a
+      wider range of outcomes than actually occurs; and avoiding the attempt
+      denies you the feedback that would correct the error.
+    when_to_apply: The moment before deciding not to approach someone.
+    antipattern: Treating anticipated awkwardness as evidence about the other person.
+    evidence_tier: A
+    status: candidate
+    verified: false
+    sources: [src_epley_schroeder_2014_solitude, src_epley_2022_undersociality]
+    basis: >
+      Commuter-train field experiments reported to find talking to strangers was
+      on average positive, against participants' own predictions; the 2022 review
+      names the three mechanisms.
+    rubric:
+      - id: logged_prediction
+        check: Did you record your predicted outcome before the interaction?
+      - id: compared_after
+        check: Did you compare it to what actually happened?
+
+  - id: volume-over-quality-when-practicing
+    name: Many small attempts, not a few good ones
+    category: approach
+    imperative: Practise with a high count of very low-stakes approaches. Do not save yourself for conversations that matter.
+    rationale: >
+      Repetition at trivial stakes is what lowers fear of rejection and raises
+      confidence, and the effect persists past the practice period. Quality of
+      any single attempt is not the active ingredient.
+    when_to_apply: Ongoing. This rule governs how you use this entire app.
+    antipattern: Waiting for a high-value conversation to try a new technique in.
+    evidence_tier: A
+    status: candidate
+    verified: false
+    sources: [src_sandstrom_2022_intervention, src_sandstrom_research_page]
+    basis: >
+      Week-long scavenger hunt of ~30 deliberately easy missions; daily decline
+      in rejection fear and daily rise in self-rated conversational ability,
+      sustained at least a week post-study versus controls.
+    rubric:
+      - id: attempt_count
+        check: Did you make three or more low-stakes attempts this week?
+
+  # ────────────────────────── Tier B ──────────────────────────
+  - id: levity-is-a-skill
+    name: Levity is trainable, not a personality trait
+    category: levity
+    imperative: Make small bids for lightness — a wry observation, a bit of playfulness — and treat missed bids as normal.
+    rationale: >
+      Levity is one of four core conversational skills in the TALK framework,
+      i.e. something practised rather than possessed. Low-cost bids raise warmth
+      without requiring you to be funny.
+    when_to_apply: Once the exchange is past its opening and has any slack in it.
+    antipattern: Prepared jokes; or treating "I'm not funny" as fixed.
+    evidence_tier: B
+    status: candidate
+    verified: false
+    sources: [src_brooks_talk_book, src_hbr_keys_great_conversation]
+    basis: The L in TALK, taught as one of four practisable skills in Brooks's HBS course.
+    rubric:
+      - id: made_bid
+        check: Did you make at least one light or playful bid?
+
+  # ────────────────────────── Tier C ──────────────────────────
+  - id: open-ended-experience-questions
+    name: Ask what it was like, not whether they liked it
+    category: asking
+    imperative: 'Prefer "What was that like?" and "How did that feel?" over questions answerable with yes, no, or a number.'
+    rationale: >
+      Closed questions return closed answers and force you to generate the next
+      turn yourself. Experience-shaped questions hand them the floor and give you
+      material to follow up on.
+    when_to_apply: Any question you're about to ask.
+    antipattern: '"Did you enjoy it?" "Was it good?" "How many years have you been there?"'
+    evidence_tier: C
+    status: candidate
+    verified: false
+    sources: [src_headlee_ted_2015, src_fine_small_talk, src_brooks_talk_book]
+    basis: Independently asserted by all three; Headlee gives the two specific phrasings above.
+    rubric:
+      - id: open_form
+        check: Was the question un-answerable in a single word?
+
+  - id: balance-the-airtime
+    name: It's a two-player game
+    category: kindness
+    imperative: Aim for roughly even participation. Notice when you've held the floor for several turns and hand it back.
+    rationale: Conversation is a two-player game requiring equal participation from both sides.
+    when_to_apply: Continuously; check in at every natural pause.
+    antipattern: Monologuing, or the inverse — pure interviewing that leaves them doing all the work.
+    evidence_tier: C
+    status: candidate
+    verified: false
+    sources: [src_fine_small_talk, src_headlee_ted_2015]
+    basis: Fine's "two-player game" framing; Headlee's "do not pontificate."
+    rubric:
+      - id: airtime_ratio
+        check: Was your share of words between 35% and 65% of the transcript?
+
+  - id: dont-multitask
+    name: Be present or be elsewhere
+    category: kindness
+    imperative: Put the phone away and stop composing your next line while they're still talking.
+    rationale: >
+      Listening is the hardest and most important component of conversation, and
+      divided attention destroys it. Half-present is worse than absent.
+    when_to_apply: Always.
+    antipattern: Phone in hand; rehearsing your reply during their turn.
+    evidence_tier: C
+    status: candidate
+    verified: false
+    sources: [src_headlee_ted_2015, src_fine_small_talk]
+    basis: Headlee's rule 1; corroborated in Fine's listening material.
+    rubric:
+      - id: no_device
+        check: Was your phone out of your hands for the whole interaction?
+
+  - id: straightforward-self-disclosure
+    name: Disclose openly, briefly, then hand the floor back
+    category: kindness
+    imperative: When you share something about yourself, share it plainly as a disclosure — don't route it through a question first.
+    rationale: >
+      Plain self-disclosure is preferred to disclosure smuggled in behind a
+      question. Sharing is not the problem; disguising it is.
+    when_to_apply: When you have something genuinely relevant to offer.
+    antipattern: "Boomerasking. Also: disclosing and then not returning the floor."
+    evidence_tier: C
+    status: candidate
+    verified: false
+    sources: [src_brooks_yeomans_2025_boomerasking]
+    basis: >
+      The contrast condition in the boomerasking work — straightforward
+      disclosers were preferred to boomeraskers.
+    rubric:
+      - id: undisguised
+        check: Was the disclosure made directly rather than after a question you then answered?
+      - id: returned_floor
+        check: Did you give the floor back within two turns?
+
+  # ────────────────────────── Tier D ──────────────────────────
+  - id: use-their-name
+    name: Learn the name and use it
+    category: kindness
+    imperative: Catch the name on introduction, say it back once, and use it again before you part.
+    rationale: Claimed to be the single highest-leverage habit in good conversation.
+    when_to_apply: At introduction and at exit.
+    antipattern: Nodding through the introduction and never having had the name.
+    evidence_tier: D
+    status: candidate
+    verified: false
+    sources: [src_fine_small_talk]
+    basis: Single-author assertion, no supporting study located. Strong claim, no evidence behind it.
+    note: >
+      Good candidate for personal field-testing — cheap to try, easy to log, and
+      the kind of D-tier rule that either shows up in field notes or doesn't.
+    rubric:
+      - id: got_name
+        check: Can you state their name afterwards?
+      - id: used_name
+        check: Did you say their name at least once after the introduction?
+
+  - id: approach-the-unengaged
+    name: Pick the person who is on their own
+    category: approach
+    imperative: Scan the room for someone alone, not occupied with an activity, who returns eye contact. Go there.
+    rationale: Lowest-barrier target — no group to break into and no interruption to commit.
+    when_to_apply: Entering any room of strangers.
+    antipattern: Standing at the edge waiting to be approached; or trying to break into a closed group of three.
+    evidence_tier: D
+    status: candidate
+    verified: false
+    sources: [src_fine_small_talk]
+    basis: Single-author tactical assertion.
+    rubric:
+      - id: selected_deliberately
+        check: Did you choose a specific person on purpose rather than drifting?
+
+  - id: have-an-exit-line
+    name: Know how you're getting out before you go in
+    category: topics
+    imperative: Carry one prepared graceful exit. Leaving badly is a bigger deterrent to starting than starting is.
+    rationale: >
+      Fear of being trapped suppresses approach. A known exit removes the
+      downside that stops you.
+    when_to_apply: Prepared in advance; used when the exchange has run its course.
+    antipattern: Drifting away mid-sentence, or staying twenty minutes past the end because you can't see a way out.
+    evidence_tier: D
+    status: candidate
+    verified: false
+    sources: [src_fine_small_talk]
+    basis: Practitioner assertion. The stated causal link to approach willingness is untested.
+    rubric:
+      - id: had_exit
+        check: Did you have an exit line prepared beforehand?
+      - id: exited_cleanly
+        check: Did you close with it rather than trailing off?
+
+  - id: say-you-dont-know
+    name: Say you don't know
+    category: kindness
+    imperative: When you don't know, say so. Don't bluff and don't approximate.
+    rationale: Claimed to cost less than being found out, and to lower the stakes for them too.
+    when_to_apply: Any factual claim you're uncertain about.
+    antipattern: Confident vagueness.
+    evidence_tier: D
+    status: candidate
+    verified: false
+    sources: [src_headlee_ted_2015]
+    basis: Headlee's rule 5. Assertion from professional practice, untested.
+    rubric:
+      - id: admitted_gap
+        check: Did you say you didn't know rather than approximating?
+
+  - id: dont-equate-experiences
+    name: Their experience is not your experience
+    category: kindness
+    imperative: 'Resist "I know exactly how you feel, when I..." — especially about loss or difficulty.'
+    rationale: Claimed to shift the subject to you at the moment they least want it shifted.
+    when_to_apply: When they describe something hard.
+    antipattern: Matching their story with your own comparable one.
+    evidence_tier: D
+    status: candidate
+    verified: false
+    sources: [src_headlee_ted_2015]
+    basis: Headlee's assertion that all experiences are individual and it is never the same.
+    rubric:
+      - id: no_matching_story
+        check: Did you avoid responding to their difficult experience with a comparable one of your own?
+
+# ═══════════════════════════ conflicts ═══════════════════════════
+# Detected by hand while assembling the seed. These are what the Phase 3 conflict
+# detector should be able to find on its own — use them as its test fixtures.
+
+conflicts:
+  - between: [dont-equate-experiences, straightforward-self-disclosure]
+    note: >
+      Headlee says redirecting to your own comparable experience makes it about
+      you. Brooks & Yeomans found plain self-disclosure is preferred to
+      disclosure hidden behind a question. Read carelessly these cancel out.
+    proposed_resolution: >
+      Keep both — they contradict only if disclosure must be a redirect. The
+      failure mode Headlee identifies is *replacing* their account with yours;
+      the one Brooks identifies is *disguising* yours as interest in theirs.
+      Disclose plainly, keep it short, return the floor. Scope
+      dont-equate-experiences to difficult or painful topics specifically.
+    status: proposed
+
+  - between: [ask-follow-up-questions, balance-the-airtime]
+    note: >
+      Maximising follow-up questions drives your airtime toward zero and turns
+      the conversation into an interview — which balance-the-airtime names as a
+      failure in its own right. The Huang finding is about question *type*, not
+      unbounded question *volume*.
+    proposed_resolution: >
+      Follow-ups are about direction, not quantity. Ask about what they said
+      rather than something new; then also contribute. If the airtime rubric
+      fails while the follow-up rubric passes, you are interviewing.
+    status: proposed
+
+  - between: [use-their-name, no-boomerasking]
+    note: >
+      Not a logical conflict — a tier conflict, and the more useful kind to
+      surface. use-their-name is a D-tier single-author claim asserted as the
+      single most important rule of conversation. no-boomerasking is A-tier with
+      measured outcomes. Both present as equally confident advice.
+    proposed_resolution: >
+      No resolution needed; this is the queue-ordering case. Teach A before D
+      regardless of how emphatically the D-tier source states its claim. Keep
+      this pair as the fixture proving tier ordering beats source confidence.
+    status: proposed

@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Config — may contain local paths and model locations
+.env
+*.env
+!examples/*.env.example
+
+# Your data. Personal conversation logs and ingested copyrighted source text.
+# Never commit these.
+sources/
+inbox/
+*.db
+*.sqlite3
+data/
+
+# macOS
+.DS_Store

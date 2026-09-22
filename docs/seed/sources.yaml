@@ -1,0 +1,167 @@
+# Seed sources for From Small to Big.
+#
+# Found by web research on 2026-09-19. These are real, locatable sources — but
+# NONE of their full text has been read. `ingest_status: not_ingested` means
+# exactly that: the app has no bytes for it yet, so no claim can be anchored and
+# no rule derived from it is sourced. Getting the primary text in is Phase 1/2
+# work, and the `acquire` note says how.
+
+sources:
+  - id: src_huang_2017_questions
+    title: "It Doesn't Hurt to Ask: Question-Asking Increases Liking"
+    author: Karen Huang, Michael Yeomans, Alison Wood Brooks, Julia Minson, Francesca Gino
+    kind: paper
+    year: 2017
+    venue: Journal of Personality and Social Psychology
+    url: https://www.hbs.edu/ris/Publication%20Files/Huang%20et%20al%202017_6945bc5e-3b3e-4c0a-addd-254c9e603c60.pdf
+    evidence_tier: A
+    acquire: Open-access PDF at the HBS URL. Drop in inbox/ as-is.
+    why_it_matters: >
+      Three studies, 600+ chat participants and 110 speed-daters across 2,000+
+      conversations, with a behavioral outcome (second-date agreement). The
+      mechanism is identified — perceived responsiveness — which means the rule
+      derived from it can be stated causally rather than as correlation.
+    ingest_status: not_ingested
+
+  - id: src_brooks_yeomans_2025_boomerasking
+    title: "Boomerasking: Answering Your Own Questions"
+    author: Alison Wood Brooks, Michael Yeomans
+    kind: paper
+    year: 2025
+    venue: "Journal of Experimental Psychology: General"
+    url: https://www.hbs.edu/ris/Publication%20Files/Boomerasking_3ff8197e-bc22-4934-8e21-24a094a3df44.pdf
+    evidence_tier: A
+    acquire: Open-access PDF at the HBS URL.
+    why_it_matters: >
+      Names and measures a specific failure mode with three sub-types
+      (ask-bragging, ask-complaining, ask-sharing). Rare in this literature: an
+      antipattern precise enough to write a boolean rubric against.
+    ingest_status: not_ingested
+
+  - id: src_epley_schroeder_2014_solitude
+    title: "Mistakenly Seeking Solitude"
+    author: Nicholas Epley, Juliana Schroeder
+    kind: paper
+    year: 2014
+    venue: "Journal of Experimental Psychology: General"
+    url: https://faculty.haas.berkeley.edu/jschroeder/Publications/Epley&Schroeder2014.pdf
+    evidence_tier: A
+    acquire: Open-access PDF at the Berkeley Haas URL.
+    why_it_matters: >
+      The commuter-train field experiments. Establishes that the forecast is
+      wrong, not the activity — people predict talking to a stranger will be
+      unpleasant and are reliably mistaken.
+    ingest_status: not_ingested
+
+  - id: src_epley_2022_undersociality
+    title: "Undersociality: Miscalibrated Social Cognition Can Inhibit Social Connection"
+    author: Nicholas Epley, Michael Kardas, Xuan Zhao, Stav Atir, Juliana Schroeder
+    kind: paper
+    year: 2022
+    venue: Trends in Cognitive Sciences
+    url: https://static1.squarespace.com/static/5c171ac1710699e060ed3d94/t/623e8412b4bd35212c8e5380/1648264211037/UndersocialityEpleyetalRevisedFinal2.pdf
+    evidence_tier: A
+    acquire: Author-hosted PDF at the Squarespace URL.
+    why_it_matters: >
+      Review paper naming three mechanisms — differential construal (you judge
+      yourself on competence, they judge you on warmth), uncertain
+      responsiveness, and asymmetric learning (avoidance prevents disconfirming
+      feedback). The third is the direct argument for this app's existence.
+    ingest_status: not_ingested
+
+  - id: src_sandstrom_2022_intervention
+    title: "Talking to Strangers: A Week-Long Intervention Reduces Psychological Barriers to Social Connection"
+    author: Gillian M. Sandstrom, Erica J. Boothby, Gus Cooney
+    kind: paper
+    year: 2022
+    venue: Journal of Experimental Social Psychology
+    url: https://www.sciencedirect.com/science/article/pii/S0022103122000750
+    evidence_tier: A
+    acquire: >
+      Likely paywalled at Elsevier. Check gilliansandstrom.com for an
+      author-hosted copy first; otherwise paste the abstract and use the
+      author's own research summary page as a secondary source.
+    why_it_matters: >
+      The scavenger-hunt intervention: ~30 easy missions ("find someone wearing
+      a hat"), fear of rejection declining daily, benefits persisting at least a
+      week. This is the design brief for the drill loop — the active ingredient
+      was repetition volume at low stakes.
+    ingest_status: not_ingested
+
+  - id: src_brooks_talk_book
+    title: "TALK: The Science of Conversation and the Art of Being Ourselves"
+    author: Alison Wood Brooks
+    kind: book_excerpt
+    year: 2025
+    url: https://www.talkstudios.com/book
+    evidence_tier: B
+    acquire: >
+      Buy it. Ingest only the excerpts you type or scan for personal study —
+      no full-text copy, per the copyright stance in PLAN.md §2.
+    why_it_matters: >
+      The TALK framework — Topics, Asking, Levity, Kindness — is the best
+      available taxonomy for organising the rule set, and it comes from the
+      researcher behind two of the A-tier papers above. Consider using its four
+      letters as the top-level rule categories.
+    ingest_status: not_ingested
+
+  - id: src_headlee_ted_2015
+    title: "10 Ways to Have a Better Conversation"
+    author: Celeste Headlee
+    kind: talk_transcript
+    year: 2015
+    venue: TEDxCreativeCoast
+    url: https://www.ted.com/talks/celeste_headlee_10_ways_to_have_a_better_conversation
+    evidence_tier: D
+    acquire: >
+      TED publishes a full transcript on the talk page. Copy it into the paste
+      form — this is the single easiest real ingest to do first, and the best
+      Phase 2 test case because it is short, structured, and contains exactly
+      ten extractable prescriptive claims.
+    why_it_matters: >
+      Ten crisp, explicitly enumerated rules from a professional interviewer.
+      Untested assertions, but unusually well-specified ones — and one of them
+      conflicts head-on with Brooks & Yeomans (see rules.yaml conflicts).
+    ingest_status: not_ingested
+
+  - id: src_fine_small_talk
+    title: "The Fine Art of Small Talk"
+    author: Debra Fine
+    kind: book_excerpt
+    year: 2005
+    url: https://books.google.com/books/about/The_Fine_Art_Of_Small_Talk.html?id=xJyHAgAAQBAJ
+    evidence_tier: D
+    acquire: Buy it. Personal-study excerpts only.
+    why_it_matters: >
+      The most cited practitioner text on this specific skill. Tactically
+      concrete where the academic work is abstract — room entry, target
+      selection, exit lines. Almost entirely untested, which is precisely what
+      the D tier is for.
+    ingest_status: not_ingested
+
+  - id: src_hbr_keys_great_conversation
+    title: "The Keys to Great Conversation (HBR IdeaCast)"
+    author: Alison Wood Brooks, Harvard Business Review
+    kind: podcast_transcript
+    year: 2025
+    url: https://hbr.org/podcast/2025/03/the-keys-to-great-conversation
+    evidence_tier: C
+    acquire: HBR posts transcripts; may hit the paywall. Paste what you can read.
+    why_it_matters: >
+      Brooks explaining TALK conversationally. Useful as a cross-source
+      corroborator for clustering — the same claims restated differently is
+      exactly what the clustering step needs to be tested against.
+    ingest_status: not_ingested
+
+  - id: src_sandstrom_research_page
+    title: "Research on Minimal Social Interactions"
+    author: Gillian M. Sandstrom
+    kind: article
+    url: https://gilliansandstrom.com/talking2strangers_research/
+    evidence_tier: C
+    acquire: Plain web page, easy to copy into the paste form.
+    why_it_matters: >
+      The author's own plain-language index of her weak-ties work. Good path to
+      the rest of her papers, and a legitimate secondary source to cite while
+      the paywalled primaries are unobtained.
+    ingest_status: not_ingested
