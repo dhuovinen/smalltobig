@@ -86,4 +86,4 @@ def test_lesson_detail_shows_its_rules(client: TestClient, settings: Settings) -
     response = client.get("/lessons/ask-and-listen")
     assert response.status_code == 200
     assert "Ask follow-up questions" in response.text
-    assert "Phase 5" in response.text  # no scenario yet
+    assert "Start roleplay" in response.text

@@ -11,15 +11,17 @@ conversation.
 Everything runs on your machine. All inference is on-device via
 [MLX](https://github.com/ml-explore/mlx). Nothing you log leaves it.
 
-> **Status: Phase 4 (lessons and drills).** The design is complete and the seed
-> corpus is real. `stb lessons` sequences your accepted rules into lessons;
-> the web UI runs the drill loop — a generated stimulus, your typed response,
-> scored against that rule's rubric only, with every "yes" backed by a quoted
-> span verified byte-for-byte against what you actually wrote. Mastery is
-> Leitner boxes per rule, and a rule cannot reach the top box on drills alone
-> (see [docs/DECISIONS.md](docs/DECISIONS.md) #15 for what live-testing this
-> against a real model actually looked like — the judge is the weak link, and
-> the verify gate is what makes that safe rather than just risky). Start with
+> **Status: Phase 5 (roleplay).** The design is complete and the seed corpus is
+> real, including five hand-authored practice scenarios. The roleplay partner
+> and the scorer are separate model calls with separate contexts: the actor
+> gets the scene and never the rules being tested; the judge gets the finished
+> transcript and never the persona's private instructions. Live-testing this
+> found the actor genuinely good at staying in character and revealing a
+> hidden interest only when you find the thread — and found the judge's real
+> limits precisely: it can be fooled into citing a real quote in support of a
+> wrong conclusion, which is different from fabricating evidence, and it's
+> worth knowing which one the verify gate actually catches (see
+> [docs/DECISIONS.md](docs/DECISIONS.md) #16). Start with
 > [docs/PLAN.md](docs/PLAN.md).
 
 ## Why not just read the books

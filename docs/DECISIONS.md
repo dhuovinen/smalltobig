@@ -295,3 +295,56 @@ model that writes well doesn't reliably grade well.
   request, no restart or sync step needed — the YAML-only design in
   store/repo_lessons.py delivers on that promise for real, not just in
   theory.
+
+### 16. Phase 5 roleplay, live: the actor is solid, the judge needed two real fixes and still has a ceiling
+
+**Tested live (2026-09-22)**, `Qwen2.5-3B-Instruct-4bit`, against real
+multi-turn conversations — not scripted fixtures.
+
+- **The actor (practice/roleplay.py) worked well with no changes needed.**
+  Across several conversations it stayed in character, gave plausible
+  specific detail (conference sessions, an elevator ride, a moving box),
+  and — genuinely encouraging — let a persona's hidden interest surface
+  *implicitly* ("just a bit of a changeover here... stick around for now")
+  without ever stating it outright, exactly the behavior docs/PLAN.md §2
+  Stage 5 asks for ("a hidden interest the model reveals only if you find
+  the thread"). Generation held up here the same way it did for rule
+  drafting and drill stimuli in earlier phases — this model tier is fine
+  at playing a character.
+- **The judge (practice/judge.py) needed two real fixes before it produced
+  usable output at all.** First: with a compound `(rule_id, rubric_id)` key
+  asked of the model, a single-rule session came back with both fields
+  blended into one garbled token (`"ask_followup"` for a rule id of
+  `"ask-follow-up-questions"` and a rubric id of `"asked_followup"`) —
+  even though the model had found a genuinely valid, verifiable quote for
+  the judgment. Rewrote matching to use a plain 1-based position number
+  instead of asking the model to echo any id string back at all — the
+  model only has to say *which numbered item* it's judging, never
+  reproduce an identifier. Second: with the id-based prompt gone, the
+  model started dropping the JSON object braces entirely — replies like
+  `["passed": true, "quote": "..."]`, syntactically invalid and
+  deterministic (same malformed shape on 3 repeated calls at
+  `temperature=0`) rather than occasional. Adding one concrete worked
+  example of the exact array-of-objects shape to the system prompt fixed
+  it completely, verified against the same transcripts that had failed.
+- **Post-fix, a plain false positive surfaced that neither fix (nor the
+  verify gate) can catch.** Given a response that ignored the partner's
+  travel story and pivoted to "did you catch the game last night?", the
+  judge marked the follow-up-question rubric item passed, quoting that
+  literal question. `verify_claim` correctly confirmed the quote is real
+  text from the response — and that's *all* it confirms. The judge had
+  treated "the user's turn contains a question mark" as satisfying "asked
+  a question referencing content from their previous turn," which is a
+  semantic misread, not a fabrication. This is the sharpest statement yet
+  of what the gate actually guarantees (docs/DECISIONS.md #3): it proves a
+  quote is real, never that the reasoning attached to it is correct. A
+  model confident and specific enough to cite real supporting text can
+  still be wrong about what that text shows.
+- **Net effect on mastery**: because `end_roleplay_session` is the first
+  signal type other than drills, this phase is also the first time the
+  box-5 ceiling in models/mastery.py actually mattered in a live run — a
+  roleplay signal (success or failure) sets `has_non_drill_evidence=True`
+  and drill successes can reach box 5 afterward, confirmed against real
+  data end to end through the web UI (start → turn → end → session detail
+  → mastery dashboard), not just the unit tests that first proved the
+  mechanism.

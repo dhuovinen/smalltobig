@@ -89,6 +89,19 @@ CREATE TABLE IF NOT EXISTS mastery (
     has_non_drill_evidence INTEGER NOT NULL,
     updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    lesson_id TEXT NOT NULL,
+    scenario_id TEXT NOT NULL,
+    rule_ids_json TEXT NOT NULL,
+    turns_json TEXT NOT NULL,
+    rubric_results_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    ended_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_lesson_id ON sessions(lesson_id);
 """
 
 

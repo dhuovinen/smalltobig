@@ -3,9 +3,9 @@
 {% block content %}
 <p class="muted"><a href="/lessons">&larr; Lessons</a></p>
 <h1>{{ lesson.name }}</h1>
-{% if not lesson.scenario_id %}
-<p class="muted">No roleplay scenario yet — that arrives in Phase 5.</p>
-{% endif %}
+<div class="actions">
+  <a class="button" href="/lessons/{{ lesson.id }}/roleplay/new">Start roleplay</a>
+</div>
 {% for rule in rules %}
 <section class="card">
   <p>

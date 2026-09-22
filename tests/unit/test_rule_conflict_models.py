@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from smalltobig.models.conflict import generate_conflict_id
 from smalltobig.models.lesson import generate_lesson_id
 from smalltobig.models.rule import generate_rule_id
+from smalltobig.models.session import generate_session_id
 
 
 def test_generate_rule_id_slugifies_the_name() -> None:
@@ -24,3 +27,18 @@ def test_generate_conflict_id_differs_for_different_pairs() -> None:
 
 def test_generate_lesson_id_slugifies_the_name() -> None:
     assert generate_lesson_id("Ask and Listen") == "ask-and-listen"
+
+
+def test_generate_session_id_is_deterministic_for_the_same_inputs() -> None:
+    now = datetime(2026, 9, 22, tzinfo=UTC)
+    assert generate_session_id("lesson-a", "elevator", now) == generate_session_id(
+        "lesson-a", "elevator", now
+    )
+
+
+def test_generate_session_id_differs_for_different_timestamps() -> None:
+    now = datetime(2026, 9, 22, tzinfo=UTC)
+    later = datetime(2026, 9, 23, tzinfo=UTC)
+    assert generate_session_id("lesson-a", "elevator", now) != generate_session_id(
+        "lesson-a", "elevator", later
+    )

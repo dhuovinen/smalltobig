@@ -17,6 +17,7 @@ from smalltobig.web.routes.conflicts import router as conflicts_router
 from smalltobig.web.routes.drills import router as drills_router
 from smalltobig.web.routes.lessons import router as lessons_router
 from smalltobig.web.routes.mastery import router as mastery_router
+from smalltobig.web.routes.roleplay import router as roleplay_router
 from smalltobig.web.routes.rules import router as rules_router
 from smalltobig.web.routes.sources import router as sources_router
 
@@ -39,4 +40,5 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(drills_router)
     app.include_router(lessons_router)
     app.include_router(mastery_router)
+    app.include_router(roleplay_router)
     return app

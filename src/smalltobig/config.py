@@ -62,6 +62,10 @@ class Settings(BaseSettings):
     def lessons_dir(self) -> Path:
         return self.repo_root / "lessons"
 
+    @property
+    def scenarios_dir(self) -> Path:
+        return self.repo_root / "scenarios"
+
 
 def get_settings() -> Settings:
     return Settings()
