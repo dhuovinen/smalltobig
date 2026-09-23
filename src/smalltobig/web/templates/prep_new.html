@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Prep card — From Small to Big{% endblock %}
+{% block content %}
+<h1>Prep card</h1>
+<p class="muted">
+  Before a real event: your three weakest rules, two topics for this specific event,
+  and one exit line.
+</p>
+<form class="stacked" method="post" action="/prep">
+  <label>What's the event?
+    <textarea name="event" required placeholder="e.g. a coworker's leaving drinks, a conference reception, a neighbor's barbecue" style="min-height: 80px;"></textarea>
+  </label>
+  <div class="actions">
+    <button type="submit">Prepare</button>
+  </div>
+</form>
+{% endblock %}

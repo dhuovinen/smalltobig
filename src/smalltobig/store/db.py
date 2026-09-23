@@ -102,6 +102,23 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sessions_lesson_id ON sessions(lesson_id);
+
+CREATE TABLE IF NOT EXISTS debriefs (
+    id TEXT PRIMARY KEY,
+    text TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS field_notes (
+    id TEXT PRIMARY KEY,
+    debrief_id TEXT NOT NULL REFERENCES debriefs(id),
+    rule_id TEXT NOT NULL REFERENCES rules(id),
+    quote TEXT NOT NULL,
+    success INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_field_notes_rule_id ON field_notes(rule_id);
 """
 
 

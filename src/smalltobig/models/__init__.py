@@ -1,12 +1,13 @@
 """Pydantic record types. See docs/PLAN.md §6 for the full model list —
-every phase-1-through-5 model now exists: Source, Claim, Rule, Conflict,
-Lesson, Drill, Mastery, Scenario, Persona and Session. FieldNote arrives
-with Phase 6.
+every model the plan names now exists: Source, Claim, Rule, Conflict,
+Lesson, Drill, Mastery, Scenario, Persona, Session, and FieldNote (with
+its Debrief). Phase 7 (voice) is optional and adds none.
 """
 
 from smalltobig.models.claim import Claim, ClaimStatus, ClaimType
 from smalltobig.models.conflict import Conflict, ConflictStatus
 from smalltobig.models.drill import Drill, RubricResult
+from smalltobig.models.field_note import Debrief, FieldNote
 from smalltobig.models.lesson import Lesson
 from smalltobig.models.mastery import Mastery, SignalType
 from smalltobig.models.rule import EvidenceTier, RubricItem, Rule, RuleStatus
@@ -20,8 +21,10 @@ __all__ = [
     "ClaimType",
     "Conflict",
     "ConflictStatus",
+    "Debrief",
     "Drill",
     "EvidenceTier",
+    "FieldNote",
     "Lesson",
     "Mastery",
     "Persona",

@@ -10,12 +10,28 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from smalltobig.models.drill import Drill, generate_drill_id
+from smalltobig.models.field_note import (
+    Debrief,
+    FieldNote,
+    generate_debrief_id,
+    generate_field_note_id,
+)
 from smalltobig.models.mastery import SignalType
+from smalltobig.models.rule import RuleStatus
 from smalltobig.models.session import Session, generate_session_id
+from smalltobig.practice.debrief import extract_field_notes
 from smalltobig.practice.drills import judge_drill_response
 from smalltobig.practice.judge import judge_session
 from smalltobig.progress.leitner import apply_signal
-from smalltobig.store import repo_drills, repo_lessons, repo_mastery, repo_rules, repo_sessions
+from smalltobig.store import (
+    repo_debriefs,
+    repo_drills,
+    repo_field_notes,
+    repo_lessons,
+    repo_mastery,
+    repo_rules,
+    repo_sessions,
+)
 
 if TYPE_CHECKING:
     import sqlite3
@@ -106,3 +122,39 @@ def end_roleplay_session(
         repo_mastery.upsert(conn, updated)
 
     return session
+
+
+def submit_debrief(
+    conn: sqlite3.Connection, client: LlmClient, text: str
+) -> tuple[Debrief, list[FieldNote]]:
+    """Extract field notes from a free-text account of a real conversation
+    against every accepted rule, persist the debrief and each note, and
+    update mastery — the only signal weighted 3.0 (docs/PLAN.md §2 Stage 6)."""
+    accepted_rules = [
+        rule for rule in repo_rules.list_all(conn) if rule.status == RuleStatus.ACCEPTED
+    ]
+
+    extracted = extract_field_notes(client, text, accepted_rules)
+    now = datetime.now(UTC)
+
+    debrief = Debrief(id=generate_debrief_id(text, now), text=text, created_at=now)
+    repo_debriefs.create(conn, debrief)
+
+    field_notes = []
+    for note in extracted:
+        field_note = FieldNote(
+            id=generate_field_note_id(debrief.id, note.rule_id),
+            debrief_id=debrief.id,
+            rule_id=note.rule_id,
+            quote=note.quote,
+            success=note.success,
+            created_at=now,
+        )
+        repo_field_notes.create(conn, field_note)
+        field_notes.append(field_note)
+
+        mastery = repo_mastery.get_or_default(conn, note.rule_id, now=now)
+        updated = apply_signal(mastery, SignalType.FIELD_NOTE, success=note.success, now=now)
+        repo_mastery.upsert(conn, updated)
+
+    return debrief, field_notes

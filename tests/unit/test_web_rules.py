@@ -107,6 +107,36 @@ def test_rule_detail_shows_provenance(client: TestClient, settings: Settings) ->
     assert "src_1" in response.text
 
 
+def test_rule_detail_shows_field_notes(client: TestClient, settings: Settings) -> None:
+    _seed_rule(settings)
+    conn = db.connect(settings.db_path)
+    try:
+        from smalltobig.models.field_note import Debrief, FieldNote
+        from smalltobig.store import repo_debriefs, repo_field_notes
+
+        debrief_created_at = datetime(2026, 9, 22, tzinfo=UTC)
+        repo_debriefs.create(
+            conn, Debrief(id="dbf_1", text="It went well.", created_at=debrief_created_at)
+        )
+        repo_field_notes.create(
+            conn,
+            FieldNote(
+                id="fn_1",
+                debrief_id="dbf_1",
+                rule_id="ask-follow-up-questions",
+                quote="asked what she had been up to",
+                success=True,
+                created_at=datetime(2026, 9, 22, tzinfo=UTC),
+            ),
+        )
+    finally:
+        conn.close()
+
+    response = client.get("/rules/ask-follow-up-questions")
+    assert response.status_code == 200
+    assert "asked what she had been up to" in response.text
+
+
 def test_accept_rule_writes_yaml_and_redirects(client: TestClient, settings: Settings) -> None:
     _seed_rule(settings)
 

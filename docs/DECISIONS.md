@@ -348,3 +348,66 @@ multi-turn conversations — not scripted fixtures.
   data end to end through the web UI (start → turn → end → session detail
   → mastery dashboard), not just the unit tests that first proved the
   mechanism.
+
+### 17. Phase 6 pre-brief/debrief, live: prep-card generation was clean; debrief extraction needed a real fix for a new failure mode the verify gate cannot see
+
+**Tested live (2026-09-22)**, `Qwen2.5-3B-Instruct-4bit`, against real
+free-text accounts of conversations, with two accepted rules
+(`ask-follow-up-questions`, tier A; `dont-multitask`, tier C).
+
+- **`generate_prep_card` (practice/debrief.py) worked with no changes
+  needed.** Given `"a coworker's farewell happy hour at a bar after work
+  on Friday"` it proposed two specific, on-topic conversation starters
+  and a natural exit line on the first try. Consistent with every prior
+  phase's finding: free generation is this model tier's strength: the
+  recurring weak point is judgment, classification, and extraction.
+- **`extract_field_notes` found a new, third category of judge failure:
+  correct evidence, correctly verified, attached to the wrong rule.**
+  The initial prompt asked the model to freely pick which rules an
+  account addressed. Given an account with genuine evidence for *both*
+  rules — a follow-up question about a marathon, and phone-in-pocket
+  behavior — it returned exactly one field note:
+  `[{"rule": 1, "success": true, "quote": "I kept my phone in my pocket
+  the entire time and just focused on the conversation."}]`. Rule 1 is
+  `ask-follow-up-questions`; the quoted text is textbook evidence for
+  `dont-multitask` (rule 2). The follow-up-question evidence in the same
+  account was not extracted at all. The JSON was syntactically clean —
+  this is not the nested-array or dropped-brace bug from #14/#16.
+  `verify_claim` correctly confirmed the quote is real text from the
+  account, and that is *all* it confirms: the gate has no way to check
+  that a real, verified quote was matched to the *correct* rule number,
+  only that it exists in the source. This sharpens #16's finding further:
+  fabrication, wrong-boolean-on-correct-evidence, and now
+  wrong-rule-on-correct-evidence are three distinct failure shapes the
+  gate stops, doesn't stop, and can't stop, respectively — none of them
+  interchangeable, and only the first is fully covered by exact-match
+  verification.
+- **Fix: replaced free selection with a one-rule-at-a-time walk.** The
+  prompt now lists every rule and requires exactly one JSON element per
+  rule, each with an explicit `"addressed": true|false` flag, rather than
+  letting the model choose which rules to report on. Retested against the
+  same account: `dont-multitask` correctly matched to the phone quote,
+  and `ask-follow-up-questions` correctly marked `"addressed": false`
+  instead of stealing the phone quote — misattribution did not recur
+  across repeated retests. Verified again end to end through the real
+  `/debrief` web route (not just the unit-tested function): the note
+  landed on `dont-multitask`, mastery updated to box 2 / score 3.0 (the
+  field-note weight from docs/PLAN.md §2 Stage 6, distinct from a drill's
+  0.5 or a roleplay's 1.0), and the quote appeared correctly on
+  `/field-notes`, `/rules/dont-multitask`, and `/mastery`.
+- **The fix traded a wrong answer for a safe non-answer, not for a
+  complete one.** Isolating the follow-up-question evidence alone (no
+  phone mention in the account at all), the one-at-a-time prompt still
+  did not recognize `"I asked her what got her into running in the first
+  place"` as follow-up-question evidence — it returned `"addressed":
+  false` rather than misattributing it. A more explicit paraphrase of the
+  same evidence (`"tell me more about that, what was the best part?"`)
+  *was* recognized correctly. So the fix closes the dangerous failure
+  mode (wrong rule, silently accepted) but does not close the safe one
+  (real evidence missed on subtler phrasing) — consistent with #14 and
+  #16's pattern that this model tier under-credits before it
+  over-credits, which is the failure direction the design can tolerate:
+  a missed field note costs nothing, since nothing became a practised
+  rule without it (docs/DECISIONS.md non-negotiable #2 in CLAUDE.md); a
+  misattributed one would have quietly corrupted mastery for the wrong
+  rule.

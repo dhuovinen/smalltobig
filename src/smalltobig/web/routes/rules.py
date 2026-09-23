@@ -11,7 +11,7 @@ from fastapi import APIRouter, Form, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 
 from smalltobig.models.rule import RuleStatus
-from smalltobig.store import repo_claims, repo_rules, yaml_sync
+from smalltobig.store import repo_claims, repo_field_notes, repo_rules, yaml_sync
 from smalltobig.web.rendering import templates
 
 # FastAPI resolves Annotated[...] dependencies at runtime, so these need a
@@ -35,10 +35,16 @@ def rule_detail(request: Request, conn: DbDep, rule_id: str) -> Response:
 
     claims = repo_claims.get_many(conn, rule.claims)
     other_rules = [r for r in repo_rules.list_all(conn) if r.id != rule_id]
+    field_notes = repo_field_notes.list_by_rule(conn, rule_id)
     return templates.TemplateResponse(
         request,
         "rule_detail.html",
-        {"rule": rule, "claims": claims, "other_rules": other_rules},
+        {
+            "rule": rule,
+            "claims": claims,
+            "other_rules": other_rules,
+            "field_notes": field_notes,
+        },
     )
 
 

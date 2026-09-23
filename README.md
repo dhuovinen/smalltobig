@@ -11,18 +11,21 @@ conversation.
 Everything runs on your machine. All inference is on-device via
 [MLX](https://github.com/ml-explore/mlx). Nothing you log leaves it.
 
-> **Status: Phase 5 (roleplay).** The design is complete and the seed corpus is
-> real, including five hand-authored practice scenarios. The roleplay partner
-> and the scorer are separate model calls with separate contexts: the actor
-> gets the scene and never the rules being tested; the judge gets the finished
-> transcript and never the persona's private instructions. Live-testing this
-> found the actor genuinely good at staying in character and revealing a
-> hidden interest only when you find the thread — and found the judge's real
-> limits precisely: it can be fooled into citing a real quote in support of a
-> wrong conclusion, which is different from fabricating evidence, and it's
-> worth knowing which one the verify gate actually catches (see
-> [docs/DECISIONS.md](docs/DECISIONS.md) #16). Start with
-> [docs/PLAN.md](docs/PLAN.md).
+> **Status: Phase 6 (pre-brief/debrief).** The core loop described above is
+> now complete end to end: ingest, extract, synthesize, drill, roleplay, and
+> log a real-world debrief afterward. A debrief is free text about a
+> conversation that already happened; the app extracts field notes tied to
+> specific rules, verified by the same exact-match gate as everything else,
+> and weights them 3x a roleplay and 6x a drill signal, because a field note
+> is the only signal that touches a real conversation rather than a
+> simulator. Live-testing this found a new failure shape distinct from the
+> roleplay judge's: given a real quote correctly verified as present in the
+> account, the model could still attach it to the *wrong* rule entirely — a
+> failure the verify gate has no way to catch, since it checks that a quote
+> exists, not that it was matched correctly. Fixed by asking the model to
+> walk the rule list one at a time instead of freely selecting; see
+> [docs/DECISIONS.md](docs/DECISIONS.md) #17. Phase 7 (voice) is explicitly
+> optional per [docs/PLAN.md](docs/PLAN.md); the core app is done.
 
 ## Why not just read the books
 

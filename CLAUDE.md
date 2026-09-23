@@ -1,16 +1,18 @@
 # From Small to Big — project instructions
 
 Local-first app. Everything runs on one machine for one user; all inference is
-on-device via MLX. **Status: Phase 5 (roleplay).** `stb doctor`, ingest, `stb
-extract`, `stb synthesize`, `stb lessons`, drills, and roleplay are all
-implemented and green — scenarios, the actor/judge separation, transcript
-scoring, and session history. See `docs/PLAN.md` before proposing anything
-past Phase 5 (Pre-brief/debrief and field notes). **Read `docs/DECISIONS.md`
-#11, #12, #15 and #16 before touching `synth/`, `embed/cluster.py`, or
-`practice/`** — all live-tested against real models (2026-09-22) and the
-findings (threshold recalibration, which model tier actually works, the
-judge's real failure modes — now three times across conflicts, drills and
-roleplay — and precisely what the verify gate does and doesn't guarantee)
+on-device via MLX. **Status: Phase 6 (pre-brief/debrief) — the core loop is
+complete.** `stb doctor`, ingest, `stb extract`, `stb synthesize`, `stb
+lessons`, drills, roleplay, and pre-brief/debrief are all implemented and
+green — scenarios, the actor/judge separation, transcript scoring, session
+history, and field notes from real conversations. Phase 7 (voice) is
+explicitly optional per `docs/PLAN.md`; do not propose it unless asked. **Read
+`docs/DECISIONS.md` #11, #12, #15, #16 and #17 before touching `synth/`,
+`embed/cluster.py`, or `practice/`** — all live-tested against real models
+(2026-09-22) and the findings (threshold recalibration, which model tier
+actually works, and the judge's real failure modes — now four times, across
+conflicts, drills, roleplay, and debrief, each a genuinely distinct shape:
+fabrication, wrong-boolean-on-real-evidence, and wrong-rule-on-real-evidence)
 are load-bearing, not speculative.
 
 This branch stays on the original `docs/PLAN.md` direction rather than the

@@ -44,6 +44,23 @@
   </ul>
 </section>
 
+{% if field_notes %}
+<section class="card">
+  <h2>Field notes — {{ field_notes|length }}</h2>
+  <ul>
+    {% for note in field_notes %}
+    <li>
+      <span class="badge {{ 'ok' if note.success else 'bad' }}">
+        {{ 'applied' if note.success else 'missed' }}
+      </span>
+      <q>{{ note.quote }}</q>
+      <span class="muted">{{ note.created_at.strftime("%Y-%m-%d") }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
 <section class="card">
   <h2>Decide</h2>
   <div class="actions">
