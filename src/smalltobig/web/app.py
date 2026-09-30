@@ -17,6 +17,7 @@ from smalltobig.web.routes.conflicts import router as conflicts_router
 from smalltobig.web.routes.debrief import router as debrief_router
 from smalltobig.web.routes.drills import router as drills_router
 from smalltobig.web.routes.field_notes import router as field_notes_router
+from smalltobig.web.routes.home import router as home_router
 from smalltobig.web.routes.lessons import router as lessons_router
 from smalltobig.web.routes.mastery import router as mastery_router
 from smalltobig.web.routes.roleplay import router as roleplay_router
@@ -35,6 +36,7 @@ def create_app(settings: Settings) -> FastAPI:
         StaticFiles(directory=str(Path(__file__).parent / "static")),
         name="static",
     )
+    app.include_router(home_router)
     app.include_router(sources_router)
     app.include_router(claims_router)
     app.include_router(rules_router)

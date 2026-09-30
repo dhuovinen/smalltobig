@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 def test_defaults_match_decisions_doc() -> None:
     settings = Settings(_env_file=None)  # type: ignore[call-arg]
-    assert settings.port == 3041
+    assert settings.port == 8028
     assert settings.llm_base_url == "http://127.0.0.1:3140/v1"
     assert settings.llm_model == ""
 

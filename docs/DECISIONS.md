@@ -20,6 +20,17 @@ moving it later costs more than the two minutes it saves now.
 **Cost of changing:** one config default. Trivial — but only while it is still
 trivial.
 
+**Amended (2026-09-23):** this assumption was made without checking the local
+port registry at `~/Projects/app-registry`, which is exactly the mistake the
+entry above warns against — "pick the port... before writing code, not after."
+3041 turned out to already be registered to an unrelated project
+(`chs-milena`). Registering `smalltobig` there via `npm run reserve` assigned
+**8028** instead (`backend-only`, single FastAPI process serving both the API
+and the server-rendered UI, following the `lang-tutor` entry's precedent). The
+web UI now binds **8028**, via `STB_PORT`. Moving it cost exactly what the
+entry above predicted: one config default, plus the two docs and one test
+that had hardcoded the old number.
+
 ### 2. Don't run `mlx_lm.server` on its default port
 
 Its default is 8000, which is the most contended port on any development

@@ -69,9 +69,10 @@ stb synthesize  # cluster accepted claims into candidate rules, propose
                 # see DECISIONS.md #11 before assuming your model can do this
 stb lessons     # sequence not-yet-lessoned accepted rules into lessons/*.yaml
                 # (prerequisite DAG, then tier, then weakest mastery)
-stb serve       # web UI at http://127.0.0.1:3041 — sources, claims review,
+stb serve       # web UI at http://127.0.0.1:8028 — sources, claims review,
                 # rules (accept/reject/supersede), conflicts (resolve),
-                # lessons, drills, roleplay, sessions, and a mastery dashboard
+                # lessons, drills, roleplay, sessions, prep/debrief, field
+                # notes, and a mastery dashboard. --host 0.0.0.0 for LAN.
 ```
 
 Config is `STB_*` environment variables, with `.env` **auto-loaded** — env vars
@@ -83,8 +84,10 @@ reads the YAML files directly, so a hand-edit shows up immediately (see
 store/repo_lessons.py and store/repo_scenarios.py). Scenarios are hand-authored
 seed content, not generated — the app never writes to `scenarios/`. Roleplay
 sessions themselves (the transcript + rubric results) live in SQLite, an
-append-only log like drills. Phase 5 stops at roleplay/session history;
-nothing in Phase 6 (pre-brief/debrief, field notes) exists yet.
+append-only log like drills. Debriefs and the field notes extracted from them
+are SQLite too (`debriefs`, `field_notes`). `/home` is an alternative front
+door (pipeline ladder + computed next move); `/` still redirects to
+`/sources`.
 
 ## Build / test / lint
 

@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     )
 
     # Web UI. See docs/DECISIONS.md #1.
-    port: int = 3041
+    port: int = 8028
 
     # Chat, over an OpenAI-compatible HTTP endpoint. Pinned off mlx_lm.server's
     # default of 8000 — see docs/DECISIONS.md #2.
