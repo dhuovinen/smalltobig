@@ -85,12 +85,12 @@ def test_next_move_pushes_toward_the_real_world_after_drilling() -> None:
 def test_home_renders_the_empty_state(client: TestClient) -> None:
     response = client.get("/home")
     assert response.status_code == 200
-    assert "with receipts" in response.text
+    assert "Small talk advice you can" in response.text
     assert "Paste a source" in response.text
     assert "sample" in response.text
 
 
-def test_home_shows_a_real_receipt_for_an_accepted_rule(
+def test_home_shows_a_real_sourced_quote_for_an_accepted_rule(
     client: TestClient, settings: Settings
 ) -> None:
     conn = db.connect(settings.db_path)

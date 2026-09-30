@@ -24,17 +24,17 @@
   .cta:hover { filter: brightness(1.1); }
   @media (prefers-color-scheme: dark) { .cta { color: #06201f !important; } }
 
-  .receipt { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px 22px 26px; transform: rotate(1.4deg); box-shadow: 0 10px 30px #0002; }
-  .receipt::after { content: ""; position: absolute; left: 0; right: 0; bottom: -7px; height: 8px;
+  .check-card { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px 22px 26px; transform: rotate(1.4deg); box-shadow: 0 10px 30px #0002; }
+  .check-card::after { content: ""; position: absolute; left: 0; right: 0; bottom: -7px; height: 8px;
     background: radial-gradient(circle at 6px -1px, transparent 6px, var(--line) 6.5px, var(--card) 7px) 0 0 / 12px 8px repeat-x; }
-  .receipt .tag { display: flex; justify-content: space-between; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.6; margin-bottom: 12px; }
-  .receipt .rule { font-weight: 700; font-size: 1.05rem; line-height: 1.3; margin-bottom: 14px; }
-  .receipt blockquote { margin: 0 0 14px; padding-left: 12px; border-left: 3px solid var(--accent); font-style: italic; }
-  .receipt .src { font-size: 0.82rem; opacity: 0.7; }
+  .check-card .tag { display: flex; justify-content: space-between; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.6; margin-bottom: 12px; }
+  .check-card .rule { font-weight: 700; font-size: 1.05rem; line-height: 1.3; margin-bottom: 14px; }
+  .check-card blockquote { margin: 0 0 14px; padding-left: 12px; border-left: 3px solid var(--accent); font-style: italic; }
+  .check-card .src { font-size: 0.82rem; opacity: 0.7; }
   .stamp { display: inline-block; margin-top: 14px; padding: 3px 10px; border: 2px solid var(--accent); color: var(--accent); border-radius: 6px; font-weight: 800; font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; transform: rotate(-3deg); }
   .bar { height: 9px; border-radius: 5px; background: var(--line); margin: 9px 0; }
   .bar.hl { background: var(--accent); opacity: 0.85; width: 62%; }
-  .receipt .sample { font-size: 0.78rem; opacity: 0.6; margin-top: 12px; }
+  .check-card .sample { font-size: 0.78rem; opacity: 0.6; margin-top: 12px; }
 
   .ladder-wrap { padding: 8px 0 44px; }
   .ladder-wrap > h2 { font-size: 1.5rem; letter-spacing: -0.02em; }
@@ -67,19 +67,19 @@
 
   @media (max-width: 720px) {
     .hero { grid-template-columns: 1fr; gap: 30px; padding-top: 8px; }
-    .receipt { transform: none; }
+    .check-card { transform: none; }
     .ladder { grid-template-columns: repeat(3, 1fr); row-gap: 40px; }
     .ladder::before { display: none; }
     .pillars { grid-template-columns: 1fr; }
   }
-  @media (prefers-reduced-motion: reduce) { .stage .dot { transition: none; } .receipt { transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .stage .dot { transition: none; } .check-card { transform: none; } }
 </style>
 
 <div class="hero-page">
   <section class="hero">
     <div>
       <div class="eyebrow">From Small to Big</div>
-      <h1>Small talk, <em>with receipts.</em></h1>
+      <h1>Small talk advice you can <em>check.</em></h1>
       <p class="lede">
         Every tip you have ever read, traced to the exact sentence it came from.
         You decide which rules earn a place. Then you practise them &mdash; and
@@ -94,27 +94,27 @@
       </div>
     </div>
 
-    <aside class="receipt" aria-label="Example of a rule and its evidence">
-      {% if receipt %}
-      {% set rule, claim, source = receipt %}
-      <div class="tag"><span>Rule receipt</span><span>tier {{ rule.evidence_tier }}</span></div>
+    <aside class="check-card" aria-label="Example of a rule and its evidence">
+      {% if sourced_rule %}
+      {% set rule, claim, source = sourced_rule %}
+      <div class="tag"><span>What the source says</span><span>tier {{ rule.evidence_tier }}</span></div>
       <div class="rule">{{ rule.imperative }}</div>
       <blockquote>&ldquo;{{ claim.verbatim }}&rdquo;</blockquote>
       <div class="src">
         {% if source %}{{ source.title }}{% if source.author %} &middot; {{ source.author }}{% endif %}{% else %}{{ claim.source_id }}{% endif %}
       </div>
-      <span class="stamp">Byte-exact match</span>
+      <span class="stamp">Verified word for word</span>
       {% else %}
-      <div class="tag"><span>Rule receipt</span><span>sample</span></div>
+      <div class="tag"><span>What the source says</span><span>sample</span></div>
       <div class="bar" style="width: 88%"></div>
       <div class="bar" style="width: 74%"></div>
       <div class="bar hl"></div>
       <div class="bar" style="width: 81%"></div>
       <div class="bar" style="width: 47%"></div>
-      <span class="stamp">Byte-exact match</span>
+      <span class="stamp">Verified word for word</span>
       <p class="sample">
-        Once you accept a rule, its receipt appears here: the highlighted sentence,
-        copied from your source with nothing changed.
+        Once you accept a rule, the source's own words appear here: the highlighted
+        sentence, copied from your text with nothing changed.
       </p>
       {% endif %}
     </aside>
@@ -146,7 +146,7 @@
   <section class="pillars">
     <div class="pillar">
       <div class="num">1</div>
-      <h3>Receipts, not vibes</h3>
+      <h3>Checked, not assumed</h3>
       <p>A local model proposes claims, but a plain string search has the last word. If the quote is not in the text, the claim never exists.</p>
     </div>
     <div class="pillar">

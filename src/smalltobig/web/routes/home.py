@@ -128,7 +128,7 @@ def home(request: Request, conn: DbDep) -> Response:
     for rule in accepted:
         boxes[mastery_of(rule).box] += 1
 
-    receipt = _latest_receipt(conn, accepted)
+    sourced_rule = _latest_sourced_rule(conn, accepted)
 
     return templates.TemplateResponse(
         request,
@@ -138,12 +138,12 @@ def home(request: Request, conn: DbDep) -> Response:
             "move": next_move(stats, weakest),
             "boxes": boxes,
             "box_max": max(boxes.values(), default=0),
-            "receipt": receipt,
+            "sourced_rule": sourced_rule,
         },
     )
 
 
-def _latest_receipt(
+def _latest_sourced_rule(
     conn: sqlite3.Connection, accepted: list[Rule]
 ) -> tuple[Rule, Claim, Source | None] | None:
     for rule in sorted(accepted, key=lambda r: r.created_at, reverse=True):
