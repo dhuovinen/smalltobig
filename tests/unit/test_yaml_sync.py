@@ -67,3 +67,25 @@ def test_remove_rule_deletes_the_file(settings: Settings) -> None:
 def test_remove_rule_is_a_no_op_when_no_file_exists(settings: Settings) -> None:
     # Rejecting a rule that was never accepted should not raise.
     yaml_sync.remove_rule(settings, "never-written")
+
+
+def test_an_accepted_starter_rule_is_exported_marked_unverified(settings: Settings) -> None:
+    rule = _rule().model_copy(
+        update={"claims": [], "basis": "Reported in three studies.", "cited_sources": ["A Paper"]}
+    )
+    yaml_sync.write_rule(settings, rule)
+
+    data = yaml.safe_load(
+        yaml_sync.rule_yaml_path(settings, rule.id).read_text(encoding="utf-8")
+    )
+    assert data["unverified"] is True
+    assert data["basis"] == "Reported in three studies."
+    assert data["cited_sources"] == ["A Paper"]
+
+
+def test_a_sourced_rule_is_not_marked_unverified(settings: Settings) -> None:
+    yaml_sync.write_rule(settings, _rule())
+    data = yaml.safe_load(
+        yaml_sync.rule_yaml_path(settings, "ask-follow-up-questions").read_text(encoding="utf-8")
+    )
+    assert "unverified" not in data

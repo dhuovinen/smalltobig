@@ -129,3 +129,25 @@ def test_re_extraction_replaces_rather_than_accumulates_claims(
     claims = repo_claims.list_by_source(conn, source_id)
     assert len(claims) == 1
     assert claims[0].verbatim == "Do not multitask during a conversation."
+
+
+def test_a_model_failure_partway_keeps_the_previous_claims(
+    conn: sqlite3.Connection, settings: Settings, source_id: str
+) -> None:
+    reply = json.dumps(
+        [
+            {
+                "verbatim": "Ask follow-up questions when they finish answering.",
+                "paraphrase": "Follow up.",
+                "claim_type": "prescriptive",
+            }
+        ]
+    )
+    extract_source(conn, settings, _ScriptedClient([reply]), source_id)
+    before = repo_claims.list_by_source(conn, source_id)
+    assert len(before) == 1
+
+    with pytest.raises(IndexError):  # _ScriptedClient runs out of replies, like a dead server
+        extract_source(conn, settings, _ScriptedClient([]), source_id)
+
+    assert repo_claims.list_by_source(conn, source_id) == before

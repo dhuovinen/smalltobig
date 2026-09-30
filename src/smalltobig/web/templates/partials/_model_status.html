@@ -1,0 +1,5 @@
+{% if online %}
+<span class="model-pill ok" title="Model server reachable at {{ base_url }}">model online</span>
+{% else %}
+<span class="model-pill bad" title="Nothing answering at {{ base_url }}. Start it with mlx_lm.server.">model offline</span>
+{% endif %}

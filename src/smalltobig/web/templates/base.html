@@ -28,6 +28,12 @@
     section.card {
       border: 1px solid #8883; border-radius: 8px; padding: 16px; margin-top: 16px;
     }
+    section.card.unverified { border-color: #b45309; }
+    #model-status { margin-left: auto; }
+    .model-pill { font-size: 0.8em; font-weight: 600; white-space: nowrap; }
+    .model-pill::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: currentColor; }
+    .model-pill.ok { color: #2a6f6f; }
+    .model-pill.bad { color: #b45309; }
     form.inline { display: inline; }
     .flash { padding: 10px 14px; border-radius: 6px; background: #8882; margin-bottom: 16px; }
     form.stacked label { display: block; margin-top: 12px; font-weight: 600; }
@@ -55,6 +61,7 @@
     <a href="/sessions">Sessions</a>
     <a href="/prep/new">Prep</a>
     <a href="/field-notes">Field Notes</a>
+    <span id="model-status" hx-get="/status/model" hx-trigger="load, every 30s" hx-swap="innerHTML"></span>
   </nav>
   {% block content %}{% endblock %}
 </body>

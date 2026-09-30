@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 from typing import cast
 
 import click
@@ -149,6 +150,38 @@ def lessons() -> None:
         f"{summary.already_lessoned} already in a lesson"
     )
     click.echo(f"{summary.lessons_created} lesson(s) created in {settings.lessons_dir}")
+
+
+@main.command()
+@click.option(
+    "--file",
+    "rules_file",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=None,
+    help="A seed rules.yaml. Defaults to docs/seed/rules.yaml.",
+)
+def seed(rules_file: Path | None) -> None:
+    """Load the starter rules and disagreements as unverified candidates."""
+    from smalltobig.seed import SeedFileError, default_seed_dir, load_seed
+    from smalltobig.store import db
+
+    settings = get_settings()
+    path = rules_file or default_seed_dir(settings) / "rules.yaml"
+    conn = db.connect(settings.db_path)
+    try:
+        summary = load_seed(conn, path)
+    except SeedFileError as exc:
+        click.echo(str(exc), err=True)
+        sys.exit(1)
+    finally:
+        conn.close()
+
+    click.echo(
+        f"{summary.rules_added} rule(s) added, {summary.rules_skipped} already present; "
+        f"{summary.conflicts_added} disagreement(s) added, "
+        f"{summary.conflicts_skipped} skipped"
+    )
+    click.echo("All are unverified candidates. Review them at /rules.")
 
 
 @main.command()

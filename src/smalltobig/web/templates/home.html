@@ -22,6 +22,8 @@
   .move p { opacity: 0.85; }
   .cta { display: inline-block; margin-top: 14px; padding: 10px 18px; border-radius: 999px; background: var(--accent); color: #fff !important; font-weight: 700; text-decoration: none; }
   .cta:hover { filter: brightness(1.1); }
+  .starter { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .starter p { font-size: 0.88rem; margin-bottom: 8px; }
   @media (prefers-color-scheme: dark) { .cta { color: #06201f !important; } }
 
   .check-card { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px 22px 26px; transform: rotate(1.4deg); box-shadow: 0 10px 30px #0002; }
@@ -91,6 +93,12 @@
         <h2>{{ move.headline }}</h2>
         <p>{{ move.detail }}</p>
         <a class="cta" href="{{ move.href }}">{{ move.label }} &rarr;</a>
+        {% if offer_starter_rules %}
+        <form method="post" action="/seed" class="starter">
+          <p>Or start with a set of starter rules. They are unverified until you add the sources behind them.</p>
+          <button type="submit">Load starter rules</button>
+        </form>
+        {% endif %}
       </div>
     </div>
 

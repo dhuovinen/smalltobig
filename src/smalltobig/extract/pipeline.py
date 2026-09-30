@@ -2,7 +2,9 @@
 
 Re-running extraction on a source replaces its prior claims, so the
 rejection rate stays a clean regression metric across prompt changes
-(docs/PLAN.md §5 Phase 2), rather than accumulating duplicates.
+(docs/PLAN.md §5 Phase 2), rather than accumulating duplicates. The old
+claims are only deleted once every chunk has been processed: the model can
+drop out partway through, and that must not leave a source with none.
 """
 
 from __future__ import annotations
@@ -55,8 +57,7 @@ def extract_source(
     normalized = repo_sources.normalized_path(settings, source_id).read_text(encoding="utf-8")
     chunks = chunk_text(normalized)
 
-    repo_claims.delete_by_source(conn, source_id)
-
+    new_claims: list[Claim] = []
     proposed = accepted = rejected = 0
     for chunk in chunks:
         for extracted in extract_claims_from_chunk(client, chunk.text):
@@ -75,11 +76,15 @@ def extract_source(
                 rejection_reason=result.reason,
                 created_at=datetime.now(UTC),
             )
-            repo_claims.create(conn, claim)
+            new_claims.append(claim)
             if result.accepted:
                 accepted += 1
             else:
                 rejected += 1
+
+    repo_claims.delete_by_source(conn, source_id)
+    for claim in new_claims:
+        repo_claims.create(conn, claim)
 
     return ExtractionSummary(
         source_id=source_id,

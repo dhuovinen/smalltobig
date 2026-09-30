@@ -6,13 +6,15 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi.responses import RedirectResponse
 
 from smalltobig.models.mastery import TOP_BOX, Mastery
 from smalltobig.models.rule import RuleStatus
+from smalltobig.seed import SeedFileError, default_seed_dir, load_seed
 from smalltobig.store import repo_claims, repo_mastery, repo_rules, repo_sources, repo_stats
 from smalltobig.web.rendering import templates
-from smalltobig.web.routes.sources import DbDep  # noqa: TC001
+from smalltobig.web.routes.sources import DbDep, SettingsDep  # noqa: TC001
 
 if TYPE_CHECKING:
     import sqlite3
@@ -35,25 +37,26 @@ class NextMove:
 
 
 def next_move(stats: HomeStats, weakest: Rule | None) -> NextMove:
-    if stats.sources == 0:
-        return NextMove(
-            "read",
-            "Feed it something to read",
-            "Paste an article, a book chapter or a transcript. Nothing is invented: "
-            "every rule you end up with will point back at this text.",
-            "Paste a source",
-            "/sources/new",
-        )
-    if stats.claims == 0:
-        return NextMove(
-            "extract",
-            "Pull the claims out",
-            "Open a source and run extraction. Each claim must match the original "
-            "text byte for byte, or it is thrown away.",
-            "Choose a source",
-            "/sources",
-        )
-    if stats.rules_accepted + stats.rules_candidate == 0:
+    has_rules = stats.rules_accepted + stats.rules_candidate > 0
+    if not has_rules:
+        if stats.sources == 0:
+            return NextMove(
+                "read",
+                "Feed it something to read",
+                "Paste an article, a book chapter or a transcript. Nothing is invented: "
+                "every rule you end up with will point back at this text.",
+                "Paste a source",
+                "/sources/new",
+            )
+        if stats.claims == 0:
+            return NextMove(
+                "extract",
+                "Pull the claims out",
+                "Open a source and run extraction. Each claim must match the original "
+                "text byte for byte, or it is thrown away.",
+                "Choose a source",
+                "/sources",
+            )
         return NextMove(
             "decide",
             "Turn claims into candidate rules",
@@ -139,6 +142,7 @@ def home(request: Request, conn: DbDep) -> Response:
             "boxes": boxes,
             "box_max": max(boxes.values(), default=0),
             "sourced_rule": sourced_rule,
+            "offer_starter_rules": stats.rules_accepted + stats.rules_candidate == 0,
         },
     )
 
@@ -151,3 +155,12 @@ def _latest_sourced_rule(
         if claims:
             return rule, claims[0], repo_sources.get(conn, claims[0].source_id)
     return None
+
+
+@router.post("/seed")
+def load_starter_rules(settings: SettingsDep, conn: DbDep) -> Response:
+    try:
+        summary = load_seed(conn, default_seed_dir(settings) / "rules.yaml")
+    except SeedFileError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return RedirectResponse(f"/rules?seeded={summary.rules_added}", status_code=303)

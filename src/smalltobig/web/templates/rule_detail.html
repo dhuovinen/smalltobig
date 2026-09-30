@@ -32,6 +32,7 @@
   </ul>
 </section>
 
+{% if claims %}
 <section class="card">
   <h2>Provenance — {{ claims|length }} claim(s)</h2>
   <ul>
@@ -43,6 +44,26 @@
     {% endfor %}
   </ul>
 </section>
+{% else %}
+<section class="card unverified">
+  <h2>Unverified starter rule</h2>
+  <p>
+    No source text backs this rule yet. It was drafted from secondary summaries,
+    not from the text itself, so treat it as a hypothesis until you ingest the
+    sources below and extract claims from them.
+  </p>
+  {% if rule.basis %}
+  <p><strong>What the sources are reported to say:</strong> {{ rule.basis }}</p>
+  {% endif %}
+  {% if rule.cited_sources %}
+  <ul>
+    {% for citation in rule.cited_sources %}
+    <li>{{ citation }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endif %}
 
 {% if field_notes %}
 <section class="card">

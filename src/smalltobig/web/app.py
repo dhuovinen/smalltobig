@@ -9,9 +9,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import httpx
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from smalltobig.web.llm_errors import handle_llm_error
 from smalltobig.web.routes.claims import router as claims_router
 from smalltobig.web.routes.conflicts import router as conflicts_router
 from smalltobig.web.routes.debrief import router as debrief_router
@@ -23,6 +25,7 @@ from smalltobig.web.routes.mastery import router as mastery_router
 from smalltobig.web.routes.roleplay import router as roleplay_router
 from smalltobig.web.routes.rules import router as rules_router
 from smalltobig.web.routes.sources import router as sources_router
+from smalltobig.web.routes.status import router as status_router
 
 if TYPE_CHECKING:
     from smalltobig.config import Settings
@@ -36,7 +39,9 @@ def create_app(settings: Settings) -> FastAPI:
         StaticFiles(directory=str(Path(__file__).parent / "static")),
         name="static",
     )
+    app.add_exception_handler(httpx.HTTPError, handle_llm_error)
     app.include_router(home_router)
+    app.include_router(status_router)
     app.include_router(sources_router)
     app.include_router(claims_router)
     app.include_router(rules_router)

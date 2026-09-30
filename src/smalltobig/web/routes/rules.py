@@ -22,9 +22,11 @@ router = APIRouter()
 
 
 @router.get("/rules")
-def list_rules(request: Request, conn: DbDep) -> Response:
+def list_rules(request: Request, conn: DbDep, seeded: int | None = None) -> Response:
     rules = repo_rules.list_all(conn)
-    return templates.TemplateResponse(request, "rules_list.html", {"rules": rules})
+    return templates.TemplateResponse(
+        request, "rules_list.html", {"rules": rules, "seeded": seeded}
+    )
 
 
 @router.get("/rules/{rule_id}")

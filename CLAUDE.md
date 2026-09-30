@@ -69,6 +69,8 @@ stb synthesize  # cluster accepted claims into candidate rules, propose
                 # see DECISIONS.md #11 before assuming your model can do this
 stb lessons     # sequence not-yet-lessoned accepted rules into lessons/*.yaml
                 # (prerequisite DAG, then tier, then weakest mastery)
+stb seed        # load docs/seed's starter rules + disagreements as UNVERIFIED
+                # candidates (no claims); safe to re-run, never overwrites a decision
 stb serve       # web UI at http://127.0.0.1:8028 — sources, claims review,
                 # rules (accept/reject/supersede), conflicts (resolve),
                 # lessons, drills, roleplay, sessions, prep/debrief, field
@@ -87,7 +89,12 @@ sessions themselves (the transcript + rubric results) live in SQLite, an
 append-only log like drills. Debriefs and the field notes extracted from them
 are SQLite too (`debriefs`, `field_notes`). `/home` is an alternative front
 door (pipeline ladder + computed next move); `/` still redirects to
-`/sources`.
+`/sources`. Rules with no claims are unverified starter rules (see `seed.py`) and
+are labelled as such in the UI and the exported YAML. Model-server failures are
+handled centrally (`web/llm_errors.py`), and the nav shows a live model status.
+
+The web UI has no authentication and is meant for a trusted LAN only — see
+`docs/BACKLOG.md` before exposing it anywhere else.
 
 ## Build / test / lint
 

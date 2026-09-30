@@ -46,6 +46,11 @@ class Rule(BaseModel):
     rubric: list[RubricItem]
     prerequisites: list[str] = []
     superseded_by: str | None = None
+    # Starter rules (seed.py) have no claims: `basis` and `cited_sources` record
+    # what they were drafted from, so a rule with `claims == []` can never pass
+    # for source-verified. Synthesized rules leave both empty.
+    basis: str | None = None
+    cited_sources: list[str] = []
     created_at: datetime
     decided_at: datetime | None = None
 

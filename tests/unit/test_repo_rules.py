@@ -101,3 +101,11 @@ def test_set_status_can_record_superseded_by(conn: sqlite3.Connection) -> None:
     rule = repo_rules.get(conn, "old-rule")
     assert rule is not None
     assert rule.superseded_by == "new-rule"
+
+
+def test_starter_rule_provenance_round_trips(conn: sqlite3.Connection) -> None:
+    rule = _make_rule(
+        claims=[], basis="Reported across three studies.", cited_sources=["A Paper — Someone, 2017"]
+    )
+    repo_rules.create(conn, rule)
+    assert repo_rules.get(conn, rule.id) == rule

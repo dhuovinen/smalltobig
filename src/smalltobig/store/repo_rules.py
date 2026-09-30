@@ -24,8 +24,9 @@ def create(conn: sqlite3.Connection, rule: Rule) -> None:
         INSERT INTO rules
             (id, name, imperative, rationale, when_to_apply, antipattern,
              evidence_tier, status, claims_json, rubric_json,
-             prerequisites_json, superseded_by, created_at, decided_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             prerequisites_json, superseded_by, created_at, decided_at,
+             basis, cited_sources_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             rule.id,
@@ -42,6 +43,8 @@ def create(conn: sqlite3.Connection, rule: Rule) -> None:
             rule.superseded_by,
             rule.created_at.isoformat(),
             rule.decided_at.isoformat() if rule.decided_at else None,
+            rule.basis,
+            json.dumps(rule.cited_sources),
         ),
     )
     conn.commit()
@@ -63,6 +66,8 @@ def _row_to_rule(row: sqlite3.Row) -> Rule:
         superseded_by=row["superseded_by"],
         created_at=datetime.fromisoformat(row["created_at"]),
         decided_at=datetime.fromisoformat(row["decided_at"]) if row["decided_at"] else None,
+        basis=row["basis"],
+        cited_sources=json.loads(row["cited_sources_json"]),
     )
 
 

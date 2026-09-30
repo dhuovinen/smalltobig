@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Model unavailable — From Small to Big{% endblock %}
+{% block content %}
+<h1>The language model {{ title }}</h1>
+<p>{{ detail }}</p>
+
+<section class="card">
+  <h2>What to try</h2>
+  <p>Start it in a terminal (this app doesn't start it for you):</p>
+  <pre class="source-text"><code>{{ start_command }}</code></pre>
+  <p class="muted">The app is looking for it at <code>{{ base_url }}</code>. Change that with <code>STB_LLM_BASE_URL</code>.</p>
+  <div class="actions">
+    <button type="button" onclick="history.back()">&larr; Back to what I was doing</button>
+  </div>
+  <p class="muted">Your browser usually keeps what you typed in the form, so going back lets you retry without retyping it.</p>
+</section>
+
+<p class="muted">
+  Reading works without the model: <a href="/sources">sources</a>, <a href="/rules">rules</a>,
+  <a href="/conflicts">conflicts</a>, <a href="/lessons">lessons</a>, <a href="/mastery">mastery</a>
+  and <a href="/sessions">history</a> are all still available.
+</p>
+{% endblock %}

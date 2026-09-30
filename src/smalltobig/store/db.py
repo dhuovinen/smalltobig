@@ -56,7 +56,9 @@ CREATE TABLE IF NOT EXISTS rules (
     prerequisites_json TEXT NOT NULL,
     superseded_by TEXT,
     created_at TEXT NOT NULL,
-    decided_at TEXT
+    decided_at TEXT,
+    basis TEXT,
+    cited_sources_json TEXT NOT NULL DEFAULT '[]'
 );
 
 CREATE TABLE IF NOT EXISTS conflicts (
@@ -122,10 +124,27 @@ CREATE INDEX IF NOT EXISTS idx_field_notes_rule_id ON field_notes(rule_id);
 """
 
 
+# CREATE TABLE IF NOT EXISTS never alters a table that already exists, so columns
+# added after a database was first created are backfilled here.
+_ADDED_COLUMNS: dict[str, dict[str, str]] = {
+    "rules": {"basis": "TEXT", "cited_sources_json": "TEXT NOT NULL DEFAULT '[]'"},
+}
+
+
+def _add_missing_columns(conn: sqlite3.Connection) -> None:
+    for table, columns in _ADDED_COLUMNS.items():
+        existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+        for name, ddl in columns.items():
+            if name not in existing:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}")
+    conn.commit()
+
+
 def connect(db_path: Path) -> sqlite3.Connection:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
+    _add_missing_columns(conn)
     return conn

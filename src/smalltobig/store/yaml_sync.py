@@ -11,7 +11,7 @@ truth for workflow state; `rules/` is the readable, portable export of it.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import yaml
 
@@ -29,7 +29,7 @@ def write_rule(settings: Settings, rule: Rule) -> None:
     """Only ever called for status == accepted — see docs/PLAN.md §6:
     "rules/ being plain git-tracked YAML... the rule set is the thing you
     are building"."""
-    data = {
+    data: dict[str, Any] = {
         "id": rule.id,
         "name": rule.name,
         "imperative": rule.imperative,
@@ -42,6 +42,10 @@ def write_rule(settings: Settings, rule: Rule) -> None:
         "prerequisites": rule.prerequisites,
         "rubric": [item.model_dump() for item in rule.rubric],
     }
+    if not rule.claims:
+        data["unverified"] = True
+        data["basis"] = rule.basis
+        data["cited_sources"] = rule.cited_sources
     path = rule_yaml_path(settings, rule.id)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
