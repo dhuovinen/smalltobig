@@ -70,7 +70,7 @@ entirely yours"* and *"give the thing a witness."*
 
 Framework elements carry tiers on the same A–D scale as `seed/rules.yaml`. Two elements
 have independent research support; the rest are hypotheses from two role-play transcripts.
-See DECISIONS #20.
+See DECISIONS #23.
 
 | Element | Tier | Basis |
 |---|---|---|
@@ -110,7 +110,7 @@ See DECISIONS #20.
 - **FR-26** An optional URL (LinkedIn, bio page) may be supplied as a secondary source.
   Fetching it is **opt-in per scenario with explicit consent at the point of use** — never
   a background fetch on paste. The consent text must state that the fetch discloses to
-  that site who is being researched, from this user's IP (DECISIONS #19).
+  that site who is being researched, from this user's IP (DECISIONS #22).
 - **FR-27** Domain selection per scenario, from §2.2.
 - **FR-28** The taxonomy in FR-22 is **provisional**, pending the interviews in §6. It is
   defined in YAML so findings change data, not code.
@@ -162,15 +162,27 @@ See DECISIONS #20.
   counter. A step cannot reach top confidence on roleplay alone.
 - **FR-55** A single, obvious **"purge everything"** action clearing all stored state.
 - **FR-56** No telemetry, no analytics, no training use of any input.
+- **FR-57** **Privacy profiles** (DECISIONS #24). `STB_PRIVACY_PROFILE=full|abstracted`,
+  one per data directory, default `abstracted`. FR-51 to FR-53 apply under `abstracted`.
+  Under `full`, all inputs, transcripts, debrief prose, attribution and model
+  request/response logs are persisted verbatim. Selecting `full` requires no further
+  confirmation.
+- **FR-58** The `abstracted` record is a deterministic projection of the `full` record,
+  `project(full) → abstracted`, and the same function runs at write time in
+  `abstracted`. A `full` store can be viewed through the projection to compare the two
+  profiles without a second run.
+- **FR-59** The active profile is always visible in the web UI, the macOS app and
+  `stb doctor`. Profiles use separate stores, and records never move between them.
+  Egress rules (FR-60s) are identical under both profiles.
 
 ### FR-60 · Backend routing
 
-- **FR-61** Extends DECISIONS #15 with two stages: `intake` and `prep`.
+- **FR-61** Extends DECISIONS #18 with two stages: `intake` and `prep`.
 - **FR-62** `prep` never calls a model at all (FR-34), so it has no backend to route.
 - **FR-63** **`intake` joins `prebrief` and `debrief` behind the field-note
   acknowledgement** (`STB_SEND_FIELD_NOTES_TO_CLOUD=i-understand`). Target-person intake
   is the most identifying input in the app — a name, an employer, a bio — and is currently
-  outside the guard. This closes that gap (DECISIONS #19).
+  outside the guard. This closes that gap (DECISIONS #22).
 - **FR-64** Refusal downgrades the stage to local and continues; it never aborts.
 
 ---
@@ -253,5 +265,5 @@ researched here. Anyone picking this up should ask what it refers to before acti
 | FR-20s | Unit tests on `classify(flags) → cluster`; a test asserting no model field accepts a literal personal fact |
 | FR-30s, NFR-13 | Offline acceptance test: network down, no model server, `stb prep` still emits a full card |
 | FR-40s | Actor/judge isolation test asserting rubric text and step names appear in no actor message; span-verification test |
-| FR-50s | `tests/test_privacy.py` — sentinel-string sweep of every DB column after scenario close; schema assertion that counter tables have no TEXT column |
+| FR-50s | `tests/test_privacy.py` — under `abstracted`: sentinel-string sweep of every DB column after scenario close; schema assertion that counter tables have no TEXT column. Across profiles: projection-equivalence test (FR-58) and a test that `full` and `abstracted` resolve to different stores (FR-59) |
 | FR-60s | Routing test: `STB_LLM_BACKEND=openai` without the acknowledgement routes intake local and emits the refusal |

@@ -13,9 +13,27 @@ Runs on your machine by default, with on-device inference via
 per pipeline stage, so you can put a large model on the batch work that reads
 published books without putting your conversation notes anywhere.
 
-> **Status: planning, requirements accepted.** No application code yet. Start with
-> [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md), then
-> [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md).
+> **Status: Phase 6 (pre-brief/debrief).** The core loop described above is
+> now complete end to end: ingest, extract, synthesize, drill, roleplay, and
+> log a real-world debrief afterward. A debrief is free text about a
+> conversation that already happened; the app extracts field notes tied to
+> specific rules, verified by the same exact-match gate as everything else,
+> and weights them 3x a roleplay and 6x a drill signal, because a field note
+> is the only signal that touches a real conversation rather than a
+> simulator. Live-testing this found a new failure shape distinct from the
+> roleplay judge's: given a real quote correctly verified as present in the
+> account, the model could still attach it to the *wrong* rule entirely — a
+> failure the verify gate has no way to catch, since it checks that a quote
+> exists, not that it was matched correctly. Fixed by asking the model to
+> walk the rule list one at a time instead of freely selecting; see
+> [docs/DECISIONS.md](docs/DECISIONS.md) #17. Phase 7 (voice) is explicitly
+> optional per [docs/PLAN.md](docs/PLAN.md); the core app is done.
+>
+> **Next direction:** the HTMSW framework requirements
+> ([docs/REQUIREMENTS.md](docs/REQUIREMENTS.md),
+> [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md)) are the plan for the next
+> phases. They predate the Phase 1–6 code, so where they say "no code yet",
+> read "not yet re-aligned to HTMSW".
 
 ## Why not just read the books
 
@@ -117,7 +135,7 @@ offsite.
 Any cloud-routed stage prints what leaves and what stays at startup, every run
 — not a first-run dialog you dismiss once and forget.
 
-Full reasoning: [docs/DECISIONS.md #15](docs/DECISIONS.md).
+Full reasoning: [docs/DECISIONS.md #18](docs/DECISIONS.md).
 
 ## Documentation
 

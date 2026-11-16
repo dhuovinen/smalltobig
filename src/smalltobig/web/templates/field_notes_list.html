@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Field notes — From Small to Big{% endblock %}
+{% block content %}
+<h1>Field notes</h1>
+<p class="muted">
+  Real-conversation evidence, most recent first — weighted 3&times; toward mastery.
+</p>
+<div class="actions">
+  <a class="button" href="/debrief/new">Log a debrief</a>
+</div>
+{% if field_notes %}
+<table>
+  <thead><tr><th>When</th><th>Rule</th><th>Result</th><th>Quote</th></tr></thead>
+  <tbody>
+    {% for note in field_notes %}
+    <tr>
+      <td class="muted">{{ note.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+      <td>
+        {% set rule = rules_by_id.get(note.rule_id) %}
+        <a href="/rules/{{ note.rule_id }}">{{ rule.name if rule else note.rule_id }}</a>
+      </td>
+      <td>
+        <span class="badge {{ 'ok' if note.success else 'bad' }}">
+          {{ 'applied' if note.success else 'missed' }}
+        </span>
+      </td>
+      <td class="muted"><q>{{ note.quote }}</q></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">No field notes yet — log a debrief after a real conversation.</p>
+{% endif %}
+{% endblock %}

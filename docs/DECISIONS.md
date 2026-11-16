@@ -20,6 +20,17 @@ moving it later costs more than the two minutes it saves now.
 **Cost of changing:** one config default. Trivial — but only while it is still
 trivial.
 
+**Amended (2026-09-23):** this assumption was made without checking the local
+port registry at `~/Projects/app-registry`, which is exactly the mistake the
+entry above warns against — "pick the port... before writing code, not after."
+3041 turned out to already be registered to an unrelated project
+(`chs-milena`). Registering `smalltobig` there via `npm run reserve` assigned
+**8028** instead (`backend-only`, single FastAPI process serving both the API
+and the server-rendered UI, following the `lang-tutor` entry's precedent). The
+web UI now binds **8028**, via `STB_PORT`. Moving it cost exactly what the
+entry above predicted: one config default, plus the two docs and one test
+that had hardcoded the old number.
+
 ### 2. Don't run `mlx_lm.server` on its default port
 
 Its default is 8000, which is the most contended port on any development
@@ -154,6 +165,41 @@ five hand-written claims that should cluster into two rules, and check whether
 your chosen model gets it. Cheap, and it tells you early which model tier you
 need.
 
+**Tested live in Phase 3 (2026-09-22), against `mlx_lm.server` and
+`mlx-community/all-MiniLM-L6-v2-bf16` embeddings, on real ingested/extracted
+claims — not synthetic fixtures:**
+
+- **Clustering threshold needed real recalibration, not just "tuned by hand on
+  the seed set" as an abstract instruction.** The code shipped with a guessed
+  default of 0.75. Measured cosine similarity between paraphrases of genuinely
+  related claims (two independent phrasings of "ask follow-up questions") came
+  back 0.40–0.56 with this embedding model — nothing came close to 0.75.
+  `embed/cluster.py`'s default is now 0.5, `stb synthesize --threshold` exposes
+  it, and even at 0.5 some true near-duplicates (0.498) still land in separate
+  clusters, producing redundant candidate rules rather than one merged rule.
+  Small general-purpose embedding models compress semantic distance more than
+  intuition suggests — don't trust a threshold you haven't measured against
+  your actual model.
+- **A 0.5B model (Qwen2.5-0.5B-Instruct-4bit) failed at rule synthesis exactly
+  as predicted** — not by being vague, but by returning structurally broken
+  output (`"evidence_tier": ["A", "B", "C"]`, a list instead of one letter;
+  placeholder-like imperatives such as `"write one rule"`). Pydantic validation
+  caught every instance and `draft_rule_from_cluster` returned `None`, so
+  nothing bad got written — the pipeline degraded to "0 rules drafted," not
+  garbage rules. This is the gate working, not a bug, but it means the 0.5B
+  tier is unusable for this stage.
+- **A 3B model (Qwen2.5-3B-Instruct-4bit) drafted seven coherent, plausible
+  candidate rules** from the same claims — correct JSON, sensible imperatives
+  and rubrics, valid single-letter tiers. Quality was good enough to be worth a
+  human's review time, not obviously wrong. This is the cheapest working
+  configuration found so far; it's plausible something between 0.5B and 3B
+  also works, but that wasn't tested.
+
+Net: the mitigation in the paragraph above is confirmed correct, not just
+theoretically reasonable — synthesis needs a model a full tier above what
+`stb doctor`'s basic round-trip needs, and the threshold guess needed real
+measurement, not just a reasonable-sounding number.
+
 ### 12. The conflict detector is the least certain component
 
 Detecting that two imperatives are incompatible requires the model to reason
@@ -166,6 +212,29 @@ search will not find at all.
 **Fallback if the model can't do it:** surface near-neighbour rule pairs with
 diverging imperatives and let you judge. Lower ambition, still useful, and the
 conflict log stays the app's best artifact either way.
+
+**Tested live in Phase 3 (2026-09-22), with the 3B model above:** this is the
+component that disappointed. The default similarity band (0.55–0.92) also
+needed recalibrating down to 0.4–0.85 for the same reason as #11's clustering
+threshold — measured similarity between genuinely related rule imperatives
+topped out around 0.51. Once candidates were actually being found, though, the
+judge itself was unreliable: **all 9 candidate pairs from the live run were
+judged `"conflict": true`**, including pairs with no real tension at all
+("follow Celeste Headlee's tips" vs "start questions with who/what/when") —
+each with a fluent but confabulated note explaining a contradiction that isn't
+there. Rewriting the prompt with an explicit contrastive example (one
+worked "not a conflict" case, one worked "genuine conflict" case) did not fix
+it — same 3B model, same false positive, on a pair a human would reject in two
+seconds. This looks like a harder failure mode than #11's: the model isn't
+short of information the way it was for evidence tiers, it's just bad at the
+specific judgment call, and a clearer prompt didn't move it.
+
+This validates the fallback above rather than requiring a new one — the
+proposed resolution is never auto-applied, `resolution` is only ever written
+by a human (see the non-negotiable in CLAUDE.md), and a false "conflict: true"
+costs a few seconds of review, not a corrupted rule set. But budget more
+review time here than for rule candidates, and don't assume a bigger-than-3B
+model fixes this without testing it — #11's 3B result doesn't transfer to #12.
 
 ### 13. Fifteen seed rules is not enough, and three of the ten sources are paywalled
 
@@ -194,11 +263,175 @@ anyone.
 It is the cheapest piece in the whole project (a text box and an LLM extraction
 call) and the only one that measures the thing you actually want.
 
+### 15. The judge/generate split from #11–#12 held up again in Phase 4
+
+**Tested live (2026-09-22)**, same 3B model (`Qwen2.5-3B-Instruct-4bit`) that
+drafted good rules in Phase 3. Drills split cleanly along the same fault line
+#11 and #12 already found: *generating* a stimulus was fine once prompted
+correctly; *judging* a response against the rubric was shakier — the same
+model that writes well doesn't reliably grade well.
+
+- **Stimulus generation needed one prompt fix.** The first version asked for
+  "a line a conversation partner might say" and got back things like *"So,
+  what's the rule you're practicing today?"* — a meta-comment, not something
+  to react to. The rule this drill tests ("ask about what they just said")
+  only makes sense against an answer-shaped stimulus, so the prompt now says
+  so explicitly ("their own statement... never a question aimed back at the
+  practicer"). Fixed it in every subsequent sample.
+- **The judge sometimes nests its own output**: asked for one flat JSON array
+  with one element per rubric item, it returned `[[item1], [item2]]` —
+  each item correctly formed but wrapped in its own single-element array.
+  `practice/drills.py` now flattens one level defensively rather than
+  dropping every item (which is what happened before the fix — the whole
+  drill silently graded "failed" regardless of the actual response).
+- **The verify gate caught a real hallucinated "yes" post-fix**: the judge
+  marked `no_topic_jump` passed but supplied `quote: ">"` — a single
+  character that isn't in the response at all. `verify_claim` correctly
+  rejected it and the item was scored failed. This is the same mechanism as
+  #12's conflict-judge finding: the model's boolean verdict is not
+  trustworthy on its own, and here the gate is what makes that safe rather
+  than just noted as a risk.
+- **Net effect on a real drill**: a clearly good response ("what trails have
+  you been exploring?") sometimes scored one rubric item genuinely passed and
+  the other correctly rejected for a bad quote — an honest partial credit,
+  not a clean pass. Expect drills to under-credit good responses more often
+  than they over-credit bad ones; that's the intended failure direction.
+- **Lesson naming is the roughest edge, and the lowest-stakes one.** At
+  `temperature=0.3`, about 1 in 4 calls returned a name mixing English and
+  garbled other-language characters (e.g. `"Question接力跟进"`). No fix
+  applied — lessons have no accept/reject gate (docs/PLAN.md §2 Stage 4:
+  "generated... then hand-edited"), so a bad name is exactly what that
+  hand-edit step is for. Verified live: editing `lessons/<id>.yaml` directly
+  while `stb serve` was running changed what the web UI showed on the next
+  request, no restart or sync step needed — the YAML-only design in
+  store/repo_lessons.py delivers on that promise for real, not just in
+  theory.
+
+### 16. Phase 5 roleplay, live: the actor is solid, the judge needed two real fixes and still has a ceiling
+
+**Tested live (2026-09-22)**, `Qwen2.5-3B-Instruct-4bit`, against real
+multi-turn conversations — not scripted fixtures.
+
+- **The actor (practice/roleplay.py) worked well with no changes needed.**
+  Across several conversations it stayed in character, gave plausible
+  specific detail (conference sessions, an elevator ride, a moving box),
+  and — genuinely encouraging — let a persona's hidden interest surface
+  *implicitly* ("just a bit of a changeover here... stick around for now")
+  without ever stating it outright, exactly the behavior docs/PLAN.md §2
+  Stage 5 asks for ("a hidden interest the model reveals only if you find
+  the thread"). Generation held up here the same way it did for rule
+  drafting and drill stimuli in earlier phases — this model tier is fine
+  at playing a character.
+- **The judge (practice/judge.py) needed two real fixes before it produced
+  usable output at all.** First: with a compound `(rule_id, rubric_id)` key
+  asked of the model, a single-rule session came back with both fields
+  blended into one garbled token (`"ask_followup"` for a rule id of
+  `"ask-follow-up-questions"` and a rubric id of `"asked_followup"`) —
+  even though the model had found a genuinely valid, verifiable quote for
+  the judgment. Rewrote matching to use a plain 1-based position number
+  instead of asking the model to echo any id string back at all — the
+  model only has to say *which numbered item* it's judging, never
+  reproduce an identifier. Second: with the id-based prompt gone, the
+  model started dropping the JSON object braces entirely — replies like
+  `["passed": true, "quote": "..."]`, syntactically invalid and
+  deterministic (same malformed shape on 3 repeated calls at
+  `temperature=0`) rather than occasional. Adding one concrete worked
+  example of the exact array-of-objects shape to the system prompt fixed
+  it completely, verified against the same transcripts that had failed.
+- **Post-fix, a plain false positive surfaced that neither fix (nor the
+  verify gate) can catch.** Given a response that ignored the partner's
+  travel story and pivoted to "did you catch the game last night?", the
+  judge marked the follow-up-question rubric item passed, quoting that
+  literal question. `verify_claim` correctly confirmed the quote is real
+  text from the response — and that's *all* it confirms. The judge had
+  treated "the user's turn contains a question mark" as satisfying "asked
+  a question referencing content from their previous turn," which is a
+  semantic misread, not a fabrication. This is the sharpest statement yet
+  of what the gate actually guarantees (docs/DECISIONS.md #3): it proves a
+  quote is real, never that the reasoning attached to it is correct. A
+  model confident and specific enough to cite real supporting text can
+  still be wrong about what that text shows.
+- **Net effect on mastery**: because `end_roleplay_session` is the first
+  signal type other than drills, this phase is also the first time the
+  box-5 ceiling in models/mastery.py actually mattered in a live run — a
+  roleplay signal (success or failure) sets `has_non_drill_evidence=True`
+  and drill successes can reach box 5 afterward, confirmed against real
+  data end to end through the web UI (start → turn → end → session detail
+  → mastery dashboard), not just the unit tests that first proved the
+  mechanism.
+
+### 17. Phase 6 pre-brief/debrief, live: prep-card generation was clean; debrief extraction needed a real fix for a new failure mode the verify gate cannot see
+
+**Tested live (2026-09-22)**, `Qwen2.5-3B-Instruct-4bit`, against real
+free-text accounts of conversations, with two accepted rules
+(`ask-follow-up-questions`, tier A; `dont-multitask`, tier C).
+
+- **`generate_prep_card` (practice/debrief.py) worked with no changes
+  needed.** Given `"a coworker's farewell happy hour at a bar after work
+  on Friday"` it proposed two specific, on-topic conversation starters
+  and a natural exit line on the first try. Consistent with every prior
+  phase's finding: free generation is this model tier's strength: the
+  recurring weak point is judgment, classification, and extraction.
+- **`extract_field_notes` found a new, third category of judge failure:
+  correct evidence, correctly verified, attached to the wrong rule.**
+  The initial prompt asked the model to freely pick which rules an
+  account addressed. Given an account with genuine evidence for *both*
+  rules — a follow-up question about a marathon, and phone-in-pocket
+  behavior — it returned exactly one field note:
+  `[{"rule": 1, "success": true, "quote": "I kept my phone in my pocket
+  the entire time and just focused on the conversation."}]`. Rule 1 is
+  `ask-follow-up-questions`; the quoted text is textbook evidence for
+  `dont-multitask` (rule 2). The follow-up-question evidence in the same
+  account was not extracted at all. The JSON was syntactically clean —
+  this is not the nested-array or dropped-brace bug from #14/#16.
+  `verify_claim` correctly confirmed the quote is real text from the
+  account, and that is *all* it confirms: the gate has no way to check
+  that a real, verified quote was matched to the *correct* rule number,
+  only that it exists in the source. This sharpens #16's finding further:
+  fabrication, wrong-boolean-on-correct-evidence, and now
+  wrong-rule-on-correct-evidence are three distinct failure shapes the
+  gate stops, doesn't stop, and can't stop, respectively — none of them
+  interchangeable, and only the first is fully covered by exact-match
+  verification.
+- **Fix: replaced free selection with a one-rule-at-a-time walk.** The
+  prompt now lists every rule and requires exactly one JSON element per
+  rule, each with an explicit `"addressed": true|false` flag, rather than
+  letting the model choose which rules to report on. Retested against the
+  same account: `dont-multitask` correctly matched to the phone quote,
+  and `ask-follow-up-questions` correctly marked `"addressed": false`
+  instead of stealing the phone quote — misattribution did not recur
+  across repeated retests. Verified again end to end through the real
+  `/debrief` web route (not just the unit-tested function): the note
+  landed on `dont-multitask`, mastery updated to box 2 / score 3.0 (the
+  field-note weight from docs/PLAN.md §2 Stage 6, distinct from a drill's
+  0.5 or a roleplay's 1.0), and the quote appeared correctly on
+  `/field-notes`, `/rules/dont-multitask`, and `/mastery`.
+- **The fix traded a wrong answer for a safe non-answer, not for a
+  complete one.** Isolating the follow-up-question evidence alone (no
+  phone mention in the account at all), the one-at-a-time prompt still
+  did not recognize `"I asked her what got her into running in the first
+  place"` as follow-up-question evidence — it returned `"addressed":
+  false` rather than misattributing it. A more explicit paraphrase of the
+  same evidence (`"tell me more about that, what was the best part?"`)
+  *was* recognized correctly. So the fix closes the dangerous failure
+  mode (wrong rule, silently accepted) but does not close the safe one
+  (real evidence missed on subtler phrasing) — consistent with #14 and
+  #16's pattern that this model tier under-credits before it
+  over-credits, which is the failure direction the design can tolerate:
+  a missed field note costs nothing, since nothing became a practised
+  rule without it (docs/DECISIONS.md non-negotiable #2 in CLAUDE.md); a
+  misattributed one would have quietly corrupted mastery for the wrong
+  rule.
+
 ---
 
 ## Added after the initial design
 
-### 15. Cloud models are supported, per stage, and never by accident
+> Renumbered on merge (2026-11-16): these were #15–#20 on `origin/main`, which
+> collided with the Phase 4–6 findings above. References in REQUIREMENTS.md,
+> IMPLEMENTATION.md, PLAN.md, README.md and CLAUDE.md were updated to match.
+
+### 18. Cloud models are supported, per stage, and never by accident
 
 Both local and cloud backends are first-class. The choice is made **per
 pipeline stage**, not once globally, because the stages do not carry remotely
@@ -294,7 +527,7 @@ debrief is the one part of this app that touches reality (#14).
 
 ---
 
-### 16. HTMSW is the content; the ingestion pipeline is deferred
+### 19. HTMSW is the content; the ingestion pipeline is deferred
 
 The original design derived its rules from ingested books because there was no authored
 methodology. HTMSW supplies one, tested through role-play rather than literature review.
@@ -303,7 +536,7 @@ methodology. HTMSW supplies one, tested through role-play rather than literature
 Phase 6, where its job is to **validate and extend** the framework rather than produce it.
 
 **Kept, not discarded:** the verify gate (#3), evidence tiers, and conflict records. The
-seed corpus becomes the evidence base — see #20.
+seed corpus becomes the evidence base — see #23.
 
 **Discarded:** lessons as the unit of work (replaced by scenarios), the generic scenario
 list (replaced by the four domains), Leitner boxes (replaced by per-step counters), and
@@ -311,7 +544,7 @@ the TALK taxonomy as the organising spine (replaced by the four-step sequence).
 
 ---
 
-### 17. Abstracted-only persistence
+### 20. Abstracted-only persistence
 
 HTMSW requires that scenario data not be persisted. The earlier design required field
 notes stored and weighted 3:1 for mastery. Directly incompatible.
@@ -331,7 +564,7 @@ sentinel string written into intake must appear in no database column after clos
 
 ---
 
-### 18. Prep is deterministic; roleplay is the only AI surface
+### 21. Prep is deterministic; roleplay is the only AI surface
 
 The framework specifies pre-built example phrasings the user adapts, not freeform lines
 generated live. Taken literally, that makes the prep card pure composition from curated
@@ -350,9 +583,9 @@ papered over by generation. `phrasings.yaml` marks gaps explicitly.
 
 ---
 
-### 19. Target-person intake joins the field-note guard; URL fetch is opt-in
+### 22. Target-person intake joins the field-note guard; URL fetch is opt-in
 
-#15 guarded `prebrief` and `debrief`. HTMSW introduces something more identifying than
+#18 guarded `prebrief` and `debrief`. HTMSW introduces something more identifying than
 either: free text about a **named** third party, plus an optional link to their profile —
 a name, an employer, a bio, about someone who has no idea this app exists.
 
@@ -367,7 +600,7 @@ says what the fetch reveals and to whom.
 
 ---
 
-### 20. Framework elements carry evidence tiers, including the weak ones
+### 23. Framework elements carry evidence tiers, including the weak ones
 
 Reviewing HTMSW against the seed corpus produced two findings worth recording.
 
@@ -396,3 +629,80 @@ Phase 6 brings the literature to bear.
 
 Tiering your own framework's weakest parts as D is uncomfortable and correct. The
 alternative is an app that cannot tell you when it is wrong.
+
+---
+
+### 24. Privacy profiles: full-fidelity capture alongside abstracted-only
+
+#18, #20 and #22 define the privacy design the product ships with. They say nothing
+about how we find out what that design costs. To know whether abstracted-only
+persistence is a good trade, we need to see what the app could do with **no loss of
+information** (verbatim text, full attribution of who said what, detailed history) and
+compare that with how it behaves under the restricted design.
+
+**Decision:** the app runs under one of two **privacy profiles**, chosen per data
+directory:
+
+| | `full` | `abstracted` |
+|---|---|---|
+| Purpose | Baseline and research: capture everything, lose nothing | The product privacy model (#20, #22) |
+| Persisted | Verbatim intake, target-person details and URLs, roleplay and real-conversation transcripts, debrief prose, field-note text, audio and transcripts from the macOS app, speaker attribution, timestamps, model request/response logs | Cluster flags, domain, per-step counters (FR-51) |
+| Scenario data on close | Kept | Purged (FR-52) |
+| Debrief | Prose stored, plus extracted outcomes | Outcomes only (FR-53) |
+
+- **Setting:** `STB_PRIVACY_PROFILE=full|abstracted`, one setting per data directory.
+  Choosing `full` needs **no further confirmations or per-session prompts**. Friction in
+  the baseline would bias the very data it exists to collect.
+- **Default:** `abstracted` for a fresh install, so the shipped behaviour is unchanged.
+  Development and baseline installs set `full` once.
+- **Separate stores:** each profile has its own data directory and database. Records
+  carry the profile they were captured under. Nothing ever moves from an `abstracted`
+  store into a `full` one. There is no "upgrade", because the information was never
+  kept.
+- **Abstraction is a projection, not a second code path.** `abstracted` stores exactly
+  what `project(full_record)` returns, and the same function runs at write time in
+  abstracted mode. A full-fidelity store can therefore be re-read through the projection
+  at any time. Comparing "full" with "what abstracted would have kept" then needs no
+  second run, and the difference is precisely what the privacy design discards. A test
+  asserts that the projection of a full record equals what abstracted mode persists for
+  the same input.
+- **Always visible:** the active profile shows in the UI (nav bar, macOS app header) and
+  in `stb doctor` output. A user is never unsure which model their data is under.
+
+**Unchanged across both profiles:**
+
+- **Egress.** Persistence and egress are separate axes. The cloud guard in #18/#22
+  applies in both profiles: `full` decides what stays on disk, not what leaves the
+  machine.
+- The verify gate (#3), actor/judge separation (#4), boolean-plus-span rubrics (#5),
+  the 3:1 weighting (FR-54), no telemetry (FR-56) and "purge everything" (FR-55, which
+  purges the active profile's store).
+
+**What this resolves:** the conflict between FR-51 and the Phase 6 code, which stores
+field-note text. Phase 6 behaviour is effectively the `full` profile. The abstracted
+profile is built as the projection on top of it, rather than by deleting what exists.
+
+**Risks and costs:**
+
+- **Recording other people depends on where the conversation happens.** A `full` store
+  holds third parties' words with attribution, and with the macOS app, possibly audio.
+  Consent rules vary by jurisdiction, so the app does not hard-code one:
+  - **Florida (US):** every party must consent to a recording. Real conversations
+    captured in `full` need that consent, or capture only your own side.
+  - **Haiti:** per the project owner (2026-11-16), all-party consent is not required
+    there. This is recorded as the owner's determination and was not independently
+    verified here.
+  - **Cross-border calls:** a call with someone located in Florida can bring
+    Florida's rule into play even when you are recording from Haiti. The stricter
+    location is the safe assumption.
+  - **Roleplay and simulated baselines** involve no third party and are unaffected
+    everywhere.
+  If this becomes an app feature rather than a note, it should be a per-capture
+  "consent obtained / not required here" flag stored with the record, not a global
+  switch.
+- **A `full` store is the most sensitive file the app produces.** It lives outside the
+  repository (never under `STB_REPO_ROOT`), with owner-only permissions, and relies on
+  disk encryption (FileVault) at rest.
+- **Two profiles mean two test matrices.** The privacy tests (FR-50s) run under
+  `abstracted`. The projection-equivalence test covers the relationship between the
+  two profiles.

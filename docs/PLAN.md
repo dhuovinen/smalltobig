@@ -7,7 +7,7 @@
 > **Still current here:** §4 Stack, §6 Repo shape, and the local-models and backend-routing
 > sections. **Superseded:** §1–3 (the sources → claims → rules pipeline is deferred to
 > Phase 6) and §5 (phasing). Retained because the deferred pipeline returns in Phase 6 and
-> the reasoning behind the verify gate and evidence tiers still applies. See DECISIONS #16.
+> the reasoning behind the verify gate and evidence tiers still applies. See DECISIONS #19.
 
 A local web app that turns other people's small-talk advice into **rules you have
 endorsed**, then drills you on them until they hold up in real conversations.
@@ -292,7 +292,7 @@ confidence — so a single switch would force one decision onto eight
 incomparable cases. `STB_LLM_BACKEND` sets the default, `STB_LLM_BACKEND_<STAGE>`
 overrides one, and the two field-note stages need a second acknowledgement
 before they will leave the machine at all. Full policy and the exact warning
-text: [DECISIONS.md #15](DECISIONS.md).
+text: [DECISIONS.md #18](DECISIONS.md).
 
 Two things to know about this split:
 

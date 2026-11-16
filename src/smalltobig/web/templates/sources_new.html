@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Paste a source — From Small to Big{% endblock %}
+{% block content %}
+<h1>Paste a source</h1>
+<p class="muted">
+  Raw text in, byte-exact — nothing is fetched for you. See docs/DECISIONS.md #7.
+</p>
+{% if error %}<div class="flash">{{ error }}</div>{% endif %}
+<form class="stacked" method="post" action="/sources">
+  <label>Title
+    <input name="title" required value="{{ form.title if form else '' }}">
+  </label>
+  <label>Author (optional)
+    <input name="author" value="{{ form.author if form else '' }}">
+  </label>
+  <label>Kind
+    <select name="kind">
+      {% for k in kinds %}
+      <option value="{{ k.value }}" {% if form and form.kind == k.value %}selected{% endif %}>
+        {{ k.value }}
+      </option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>URL (optional — provenance only, nothing is fetched)
+    <input name="url" value="{{ form.url if form else '' }}">
+  </label>
+  <label>License note (optional)
+    <input name="license_note" value="{{ form.license_note if form else '' }}">
+  </label>
+  <label>Text
+    <textarea name="text" required>{{ form.text if form else '' }}</textarea>
+  </label>
+  <div class="actions">
+    <button type="submit">Ingest</button>
+    <a class="button" href="/sources">Cancel</a>
+  </div>
+</form>
+{% endblock %}

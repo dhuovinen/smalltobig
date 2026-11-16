@@ -1,0 +1,23 @@
+<div id="sources-table">
+  {% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+  {% if sources %}
+  <table>
+    <thead>
+      <tr><th>Title</th><th>Kind</th><th>Author</th><th>Retrieved</th><th>id</th></tr>
+    </thead>
+    <tbody>
+      {% for source in sources %}
+      <tr>
+        <td><a href="/sources/{{ source.id }}">{{ source.title }}</a></td>
+        <td><span class="badge">{{ source.kind.value }}</span></td>
+        <td>{{ source.author or "—" }}</td>
+        <td class="muted">{{ source.retrieved_at.strftime("%Y-%m-%d") }}</td>
+        <td class="muted">{{ source.id }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Nothing ingested yet.</p>
+  {% endif %}
+</div>

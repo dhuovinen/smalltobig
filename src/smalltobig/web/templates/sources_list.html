@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Sources — From Small to Big{% endblock %}
+{% block content %}
+<h1>Sources</h1>
+<p class="muted">
+  {{ sources|length }} ingested. Drop files in <code>{{ inbox_dir }}</code> and check
+  the inbox, or <a href="/sources/new">paste text</a> directly.
+</p>
+<div class="actions">
+  <a class="button" href="/sources/new">+ Paste a source</a>
+  <button hx-post="/sources/poll-inbox" hx-target="#sources-table" hx-swap="outerHTML">
+    Check inbox
+  </button>
+</div>
+{% include "partials/_sources_table.html" %}
+{% endblock %}

@@ -1,11 +1,27 @@
 # From Small to Big — project instructions
 
-Local-first app built on the **HTMSW** framework: helps a user prepare for, rehearse and
-debrief one specific upcoming conversation. **Status: planning, requirements accepted.**
-No application code yet.
+Local-first app. Everything runs on one machine for one user; all inference is
+on-device via MLX. **Status: Phase 6 (pre-brief/debrief) — the core loop is
+complete.** `stb doctor`, ingest, `stb extract`, `stb synthesize`, `stb
+lessons`, drills, roleplay, and pre-brief/debrief are all implemented and
+green — scenarios, the actor/judge separation, transcript scoring, session
+history, and field notes from real conversations. Phase 7 (voice) is
+explicitly optional per `docs/PLAN.md`; do not propose it unless asked. **Read
+`docs/DECISIONS.md` #11, #12, #15, #16 and #17 before touching `synth/`,
+`embed/cluster.py`, or `practice/`** — all live-tested against real models
+(2026-09-22) and the findings (threshold recalibration, which model tier
+actually works, and the judge's real failure modes — now four times, across
+conflicts, drills, roleplay, and debrief, each a genuinely distinct shape:
+fabrication, wrong-boolean-on-real-evidence, and wrong-rule-on-real-evidence)
+are load-bearing, not speculative.
 
-Read `docs/REQUIREMENTS.md` then `docs/IMPLEMENTATION.md` before proposing anything.
-`docs/PLAN.md` is partly superseded — see its header.
+**Direction (merged 2026-11-16):** the HTMSW requirements and plan from
+`origin/main` are now on this branch as the *target*, not a description of the
+code. `docs/REQUIREMENTS.md` and `docs/IMPLEMENTATION.md` say "no application
+code yet" because they were written before Phases 1–6 landed; read them as the
+next direction, and read DECISIONS #18–#24 alongside #1–#17. Repo-wide plan:
+this engine is being combined with the `be-better` macOS app and the
+`cursor-htmsw` prototype.
 
 ## Non-negotiables
 
@@ -23,30 +39,40 @@ is a decision to record there, not a refactor.
    local models rating qualities out of ten produce noise that looks like data.
 4. **The roleplay actor never sees the rubric; the judge never sees the
    persona's private instructions.** Separate calls, separate contexts.
-5. **Real-conversation outcomes outweigh roleplay 3:1 on the same counter, and no
-   step reaches top confidence on roleplay alone** (FR-54). This is what stops the
-   app certifying the user as good at talking to a language model. The weighting
-   applies to the four booleans, not to stored prose — see #9.
+5. **Field notes outweigh simulator scores 3:1, and no rule reaches top mastery
+   on drills alone.** This is what stops the app certifying the user as good at
+   talking to a language model.
 6. **No source-text export path.** Extracts of copyrighted material are stored
    for personal study; there is no feature that redistributes them.
-7. **Framework content lives in YAML under `framework/`, never in Python or a
+
+### Planned (HTMSW target, not yet implemented)
+
+These come from `docs/REQUIREMENTS.md`. They are not true of the current code;
+treat them as constraints on *new* work toward that plan. #3 applies under the
+`abstracted` privacy profile only; see #5.
+
+1. **Framework content lives in YAML under `framework/`, never in Python or a
    template.** Adding a domain or changing pacing must be a data edit (FR-11, FR-14).
-8. **The prep card makes zero model calls and zero network calls.** Enforced by an
-   offline CI test. This isolates all model risk in roleplay (DECISIONS #18).
-9. **No free text about the user or any third party is ever written to disk.** Persist
+2. **The prep card makes zero model calls and zero network calls.** Enforced by an
+   offline CI test. This isolates all model risk in roleplay (DECISIONS #21).
+3. **No free text about the user or any third party is ever written to disk.** Persist
    cluster flags and integer counters only; a sentinel-string sweep of every DB column
-   enforces it (FR-51, DECISIONS #17).
-10. **Backends are per-stage and default to local.** `intake`, `prebrief` and
+   enforces it (FR-51, DECISIONS #20).
+4. **Backends are per-stage and default to local.** `intake`, `prebrief` and
    `debrief` require `STB_SEND_FIELD_NOTES_TO_CLOUD=i-understand` before any
    cloud backend touches them, and refusing downgrades to local and continues
    rather than aborting. Never collapse this to a single global switch and never
    let a stage silently use a backend the user did not select for it — field
    notes contain the words of people who are not users of this app.
+5. **Two privacy profiles, `full` and `abstracted` (DECISIONS #24).** `full` persists
+   everything verbatim with attribution, for baseline comparison, and needs no extra
+   confirmations. `abstracted` stores only `project(full_record)`, the same projection
+   function. Separate stores per profile, and the active profile is always shown.
+   Egress rules (#4 above) are identical under both: the profile governs what stays
+   on disk, not what leaves the machine. Today's Phase 6 behaviour is effectively
+   `full`.
 
 ## How to run
-
-Nothing to run yet. Phase 0 (`docs/PLAN.md` §5) delivers `stb doctor`, which
-must go green before Phases 1–2 are built on top of it.
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
@@ -60,8 +86,46 @@ Model servers are run separately, not supervised by this app:
 mlx_lm.server --model <model> --port 3140    # NOT its default 8000; see DECISIONS #2
 ```
 
+Then:
+
+```bash
+stb doctor      # reaches the chat server, round-trips a generation,
+                # loads the embedding model, reports cosine similarity
+stb ingest      # picks up files dropped in STB_DATA_DIR/inbox (default
+                # ~/SmallToBig/inbox/), moves them to sources/<id>/
+stb extract <source_id>   # chunk, ask the model for claims, verify each by
+                # exact substring match, report the rejection rate
+stb synthesize  # cluster accepted claims into candidate rules, propose
+                # conflicts — needs a bigger model than doctor/extract;
+                # see DECISIONS.md #11 before assuming your model can do this
+stb lessons     # sequence not-yet-lessoned accepted rules into lessons/*.yaml
+                # (prerequisite DAG, then tier, then weakest mastery)
+stb seed        # load docs/seed's starter rules + disagreements as UNVERIFIED
+                # candidates (no claims); safe to re-run, never overwrites a decision
+stb serve       # web UI at http://127.0.0.1:8028 — sources, claims review,
+                # rules (accept/reject/supersede), conflicts (resolve),
+                # lessons, drills, roleplay, sessions, prep/debrief, field
+                # notes, and a mastery dashboard. --host 0.0.0.0 for LAN.
+```
+
 Config is `STB_*` environment variables, with `.env` **auto-loaded** — env vars
-override the file.
+override the file. Accepting a rule writes `rules/<id>.yaml` in `STB_REPO_ROOT`
+(default: cwd) — git-tracked, one-way sync from the database, never the other
+way (see store/yaml_sync.py). `lessons/<id>.yaml` and `scenarios/*.yaml` are
+different: no DB copy at all, no sync direction to reason about — the web UI
+reads the YAML files directly, so a hand-edit shows up immediately (see
+store/repo_lessons.py and store/repo_scenarios.py). Scenarios are hand-authored
+seed content, not generated — the app never writes to `scenarios/`. Roleplay
+sessions themselves (the transcript + rubric results) live in SQLite, an
+append-only log like drills. Debriefs and the field notes extracted from them
+are SQLite too (`debriefs`, `field_notes`). `/home` is an alternative front
+door (pipeline ladder + computed next move); `/` still redirects to
+`/sources`. Rules with no claims are unverified starter rules (see `seed.py`) and
+are labelled as such in the UI and the exported YAML. Model-server failures are
+handled centrally (`web/llm_errors.py`), and the nav shows a live model status.
+
+The web UI has no authentication and is meant for a trusted LAN only — see
+`docs/BACKLOG.md` before exposing it anywhere else.
 
 ## Build / test / lint
 

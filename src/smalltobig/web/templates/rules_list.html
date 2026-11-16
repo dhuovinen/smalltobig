@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Rules — From Small to Big{% endblock %}
+{% block content %}
+<h1>Rules</h1>
+{% if seeded is not none %}
+<p class="flash">
+  {% if seeded %}Loaded {{ seeded }} starter rule{{ '' if seeded == 1 else 's' }}{% else %}Starter rules were already loaded{% endif %}.
+  They are unverified candidates until you ingest their sources. Accept or reject
+  each one, and check <a href="/conflicts">Conflicts</a> for the disagreements between them.
+</p>
+{% endif %}
+<p class="muted">
+  {{ rules|length }} total. Run <code>stb synthesize</code> to cluster accepted claims
+  into new candidates.
+</p>
+{% if rules %}
+<table>
+  <thead>
+    <tr><th>Status</th><th>Tier</th><th>Name</th><th>Imperative</th></tr>
+  </thead>
+  <tbody>
+    {% for rule in rules %}
+    <tr>
+      <td>
+        <span class="badge {{ 'ok' if rule.status.value == 'accepted' else 'bad' if rule.status.value == 'rejected' else '' }}">
+          {{ rule.status.value }}
+        </span>
+      </td>
+      <td><span class="badge tier-{{ rule.evidence_tier }}">{{ rule.evidence_tier }}</span></td>
+      <td>
+        <a href="/rules/{{ rule.id }}">{{ rule.name }}</a>
+        {% if not rule.claims %}<span class="badge bad" title="No source text backs this rule yet">unverified</span>{% endif %}
+      </td>
+      <td class="muted">{{ rule.imperative }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">No rules yet — extract some claims, then run <code>stb synthesize</code>.</p>
+{% endif %}
+{% endblock %}

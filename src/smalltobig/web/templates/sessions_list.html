@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Sessions — From Small to Big{% endblock %}
+{% block content %}
+<h1>Sessions</h1>
+<p class="muted">Roleplay history, most recent first.</p>
+{% if sessions %}
+<table>
+  <thead><tr><th>When</th><th>Lesson</th><th>Scenario</th><th>Result</th></tr></thead>
+  <tbody>
+    {% for session in sessions %}
+    <tr>
+      <td class="muted">{{ session.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+      <td>
+        {% set lesson = lessons_by_id.get(session.lesson_id) %}
+        {{ lesson.name if lesson else session.lesson_id }}
+      </td>
+      <td>
+        {% set scenario = scenarios_by_id.get(session.scenario_id) %}
+        {{ scenario.name if scenario else session.scenario_id }}
+      </td>
+      <td>
+        <a href="/sessions/{{ session.id }}">
+          {{ session.rubric_results|selectattr("passed")|list|length }}
+          / {{ session.rubric_results|length }} passed
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">No roleplay sessions yet — open a lesson and start one.</p>
+{% endif %}
+{% endblock %}

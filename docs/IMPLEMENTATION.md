@@ -12,7 +12,7 @@ DECISIONS.md.
 ## Before you start
 
 Read in this order: REQUIREMENTS.md §1–2 (what the product is), DECISIONS.md #3, #4, #5,
-#15, #16–#20 (the constraints you must not quietly relax), then this file.
+#18, #19–#23 (the constraints you must not quietly relax), then this file.
 
 **Five things that are not style preferences.** Each has a test enforcing it; if one
 fails, the fix is essentially never to loosen the test.
@@ -41,7 +41,7 @@ assumed answer.
 
 - `src/smalltobig/config.py` — `STB_*` settings via pydantic-settings, `.env` auto-loaded (#9).
 - `src/smalltobig/llm/client.py` — a `LlmClient` protocol plus an OpenAI-compatible
-  implementation. Per-stage resolution: `STB_LLM_BACKEND`, `STB_LLM_BACKEND_<STAGE>` (#15,
+  implementation. Per-stage resolution: `STB_LLM_BACKEND`, `STB_LLM_BACKEND_<STAGE>` (#18,
   FR-61). Stages: `intake`, `prep`, `roleplay`, `judge`, `debrief`.
 - `src/smalltobig/cli.py` — click entry point, `stb` (already declared in `pyproject.toml`).
 - `stb doctor` — reaches `mlx_lm.server`, round-trips a generation, loads the embedding
@@ -229,7 +229,7 @@ contains no prose.
 ## Phase 5 — Enrichment (post-MVP)
 
 - Opt-in URL fetch with consent at point of use, stating that the fetch discloses to that
-  site who is being researched, from this user's IP (FR-26, #19).
+  site who is being researched, from this user's IP (FR-26, #22).
 - Model-adapted phrasings that remain anchored to the curated examples rather than
   replacing them.
 - Additional domains beyond the four — a YAML-only change if FR-14 held.
@@ -243,7 +243,7 @@ to **validate and extend** it — particularly the D-tier elements in REQUIREMEN
 which currently rest on two self-authored transcripts.
 
 The existing seed corpus (`docs/seed/`) is the starting evidence base. It has already
-earned its place once: it independently corroborates step 2 (see DECISIONS #20).
+earned its place once: it independently corroborates step 2 (see DECISIONS #23).
 
 ---
 

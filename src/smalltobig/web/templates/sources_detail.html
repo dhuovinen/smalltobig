@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ source.title }} — From Small to Big{% endblock %}
+{% block content %}
+<p class="muted"><a href="/sources">&larr; Sources</a></p>
+<h1>{{ source.title }}</h1>
+<p>
+  <span class="badge">{{ source.kind.value }}</span>
+  {% if source.author %}&middot; {{ source.author }}{% endif %}
+  &middot; retrieved {{ source.retrieved_at.strftime("%Y-%m-%d") }}
+</p>
+<table>
+  <tr><th>id</th><td class="muted">{{ source.id }}</td></tr>
+  <tr><th>sha256</th><td class="muted">{{ source.sha256 }}</td></tr>
+  {% if source.url %}<tr><th>url</th><td>{{ source.url }}</td></tr>{% endif %}
+  {% if source.license_note %}<tr><th>license note</th><td>{{ source.license_note }}</td></tr>{% endif %}
+  {% if source.original_filename %}
+  <tr><th>original filename</th><td>{{ source.original_filename }}</td></tr>
+  {% endif %}
+</table>
+<div class="actions">
+  <a class="button" href="/sources/{{ source.id }}/claims">Claims</a>
+</div>
+<h2>Normalized text</h2>
+<pre class="source-text">{{ normalized_text }}</pre>
+{% endblock %}

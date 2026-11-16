@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Drill result — {{ rule.name }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="/rules/{{ rule.id }}">&larr; {{ rule.name }}</a></p>
+<h1>Drill result</h1>
+<p>
+  <span class="badge {{ 'ok' if drill.success else 'bad' }}">
+    {{ 'passed' if drill.success else 'needs work' }}
+  </span>
+</p>
+<section class="card">
+  <p><strong>Stimulus:</strong> &ldquo;{{ drill.stimulus }}&rdquo;</p>
+  <p><strong>Your response:</strong> {{ drill.response }}</p>
+</section>
+<section class="card">
+  <h2>Rubric</h2>
+  <ul>
+    {% for check, result in graded %}
+    <li>
+      <span class="badge {{ 'ok' if result.passed else 'bad' }}">
+        {{ 'yes' if result.passed else 'no' }}
+      </span>
+      {{ check }}
+      {% if result.quote %}<div class="muted"><q>{{ result.quote }}</q></div>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+<div class="actions">
+  <a class="button" href="/rules/{{ rule.id }}/drill">Drill again</a>
+</div>
+{% endblock %}

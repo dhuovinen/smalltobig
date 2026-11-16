@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Roleplay — {{ lesson.name }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="/lessons/{{ lesson.id }}">&larr; {{ lesson.name }}</a></p>
+<h1>Start a roleplay</h1>
+<p class="muted">Pick a scenario. The partner never sees which rules you're being scored on.</p>
+<form class="stacked" method="post" action="/lessons/{{ lesson.id }}/roleplay/start">
+  <label>Scenario
+    <select name="scenario_id">
+      {% for scenario in scenarios %}
+      <option value="{{ scenario.id }}">{{ scenario.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <div class="actions">
+    <button type="submit">Begin</button>
+  </div>
+</form>
+{% if not scenarios %}
+<p class="muted">No scenarios found in <code>scenarios/*.yaml</code>.</p>
+{% endif %}
+{% endblock %}

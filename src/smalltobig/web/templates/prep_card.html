@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Prep card{% endblock %}
+{% block content %}
+<p class="muted"><a href="/prep/new">&larr; New prep card</a></p>
+<h1>Prep card</h1>
+<p class="muted">{{ event }}</p>
+
+<section class="card">
+  <h2>Your three weakest rules</h2>
+  {% if weak_rules %}
+  <ul>
+    {% for rule in weak_rules %}
+    <li>
+      <span class="badge tier-{{ rule.evidence_tier }}">tier {{ rule.evidence_tier }}</span>
+      <a href="/rules/{{ rule.id }}">{{ rule.name }}</a>
+      <div class="muted">{{ rule.imperative }}</div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">No accepted rules yet.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Topics for this event</h2>
+  {% if content %}
+  <ul>
+    {% for topic in content.topics %}
+    <li>{{ topic }}</li>
+    {% endfor %}
+  </ul>
+  <h2>Exit line</h2>
+  <p>&ldquo;{{ content.exit_line }}&rdquo;</p>
+  {% else %}
+  <p class="muted">Couldn't generate topics this time — try again, or prepare your own.</p>
+  {% endif %}
+</section>
+
+<div class="actions">
+  <a class="button" href="/debrief/new">Log a debrief after the event</a>
+</div>
+{% endblock %}

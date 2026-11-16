@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Roleplay — {{ scenario.name }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="/lessons/{{ lesson.id }}">&larr; {{ lesson.name }}</a></p>
+<h1>{{ scenario.name }}</h1>
+<p class="muted">{{ scenario.setting }}</p>
+
+<section class="card">
+  {% for turn in turns %}
+  <p>
+    <strong>{{ scenario.persona.name if turn.speaker == 'partner' else 'You' }}:</strong>
+    {{ turn.text }}
+  </p>
+  {% endfor %}
+</section>
+
+<form class="stacked" method="post" action="/lessons/{{ lesson.id }}/roleplay/turn">
+  <input type="hidden" name="scenario_id" value="{{ scenario.id }}">
+  <input type="hidden" name="turns_json" value='{{ turns_json }}'>
+  <label>Your reply
+    <textarea name="reply" required style="min-height: 100px;"></textarea>
+  </label>
+  <div class="actions">
+    <button type="submit">Send</button>
+  </div>
+</form>
+
+<form class="stacked" method="post" action="/lessons/{{ lesson.id }}/roleplay/end">
+  <input type="hidden" name="scenario_id" value="{{ scenario.id }}">
+  <input type="hidden" name="turns_json" value='{{ turns_json }}'>
+  <div class="actions">
+    <button type="submit">End &amp; score</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Debrief — From Small to Big{% endblock %}
+{% block content %}
+<h1>Debrief</h1>
+<p class="muted">
+  What happened? Free text — the model looks for accepted rules you applied or
+  missed, and every quote it cites gets checked against what you actually wrote.
+  Field notes count 3&times; as much as a drill toward mastery, because this is the
+  only signal from a real conversation.
+</p>
+<form class="stacked" method="post" action="/debrief">
+  <label>What happened?
+    <textarea name="text" required style="min-height: 200px;"></textarea>
+  </label>
+  <div class="actions">
+    <button type="submit">Log it</button>
+  </div>
+</form>
+{% endblock %}

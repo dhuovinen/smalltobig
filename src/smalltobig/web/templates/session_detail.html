@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Session — {{ scenario.name if scenario else session.scenario_id }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="/sessions">&larr; Sessions</a></p>
+<h1>{{ scenario.name if scenario else session.scenario_id }}</h1>
+<p class="muted">
+  {{ lesson.name if lesson else session.lesson_id }}
+  &middot; {{ session.created_at.strftime("%Y-%m-%d %H:%M") }}
+</p>
+
+<section class="card">
+  {% for turn in session.turns %}
+  <p>
+    <strong>{{ (scenario.persona.name if scenario else 'Partner') if turn.speaker == 'partner' else 'You' }}:</strong>
+    {{ turn.text }}
+  </p>
+  {% endfor %}
+</section>
+
+<section class="card">
+  <h2>Rubric</h2>
+  <ul>
+    {% for result in session.rubric_results %}
+    <li>
+      <span class="badge {{ 'ok' if result.passed else 'bad' }}">
+        {{ 'yes' if result.passed else 'no' }}
+      </span>
+      <a href="/rules/{{ result.rule_id }}">{{ result.rule_id }}</a> / {{ result.rubric_id }}
+      {% if result.quote %}<div class="muted"><q>{{ result.quote }}</q></div>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

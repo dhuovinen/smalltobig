@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}{{ rule.name }} — From Small to Big{% endblock %}
+{% block content %}
+<p class="muted"><a href="/rules">&larr; Rules</a></p>
+<h1>{{ rule.name }}</h1>
+<p>
+  <span class="badge {{ 'ok' if rule.status.value == 'accepted' else 'bad' if rule.status.value == 'rejected' else '' }}">
+    {{ rule.status.value }}
+  </span>
+  <span class="badge tier-{{ rule.evidence_tier }}">tier {{ rule.evidence_tier }}</span>
+  {% if rule.status.value == 'superseded' and rule.superseded_by %}
+  &middot; superseded by <a href="/rules/{{ rule.superseded_by }}">{{ rule.superseded_by }}</a>
+  {% endif %}
+</p>
+<div class="actions">
+  <a class="button" href="/rules/{{ rule.id }}/drill">Drill this rule</a>
+</div>
+
+<section class="card">
+  <p><strong>Imperative:</strong> {{ rule.imperative }}</p>
+  <p><strong>Rationale:</strong> {{ rule.rationale }}</p>
+  <p><strong>When to apply:</strong> {{ rule.when_to_apply }}</p>
+  <p><strong>Antipattern:</strong> {{ rule.antipattern }}</p>
+</section>
+
+<section class="card">
+  <h2>Rubric</h2>
+  <ul>
+    {% for item in rule.rubric %}
+    <li>{{ item.check }}</li>
+    {% endfor %}
+  </ul>
+</section>
+
+{% if claims %}
+<section class="card">
+  <h2>Provenance — {{ claims|length }} claim(s)</h2>
+  <ul>
+    {% for claim in claims %}
+    <li>
+      <q>{{ claim.verbatim }}</q>
+      — <a href="/sources/{{ claim.source_id }}/claims">{{ claim.source_id }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% else %}
+<section class="card unverified">
+  <h2>Unverified starter rule</h2>
+  <p>
+    No source text backs this rule yet. It was drafted from secondary summaries,
+    not from the text itself, so treat it as a hypothesis until you ingest the
+    sources below and extract claims from them.
+  </p>
+  {% if rule.basis %}
+  <p><strong>What the sources are reported to say:</strong> {{ rule.basis }}</p>
+  {% endif %}
+  {% if rule.cited_sources %}
+  <ul>
+    {% for citation in rule.cited_sources %}
+    <li>{{ citation }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if field_notes %}
+<section class="card">
+  <h2>Field notes — {{ field_notes|length }}</h2>
+  <ul>
+    {% for note in field_notes %}
+    <li>
+      <span class="badge {{ 'ok' if note.success else 'bad' }}">
+        {{ 'applied' if note.success else 'missed' }}
+      </span>
+      <q>{{ note.quote }}</q>
+      <span class="muted">{{ note.created_at.strftime("%Y-%m-%d") }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>Decide</h2>
+  <div class="actions">
+    <form class="inline" method="post" action="/rules/{{ rule.id }}/accept">
+      <button type="submit">Accept</button>
+    </form>
+    <form class="inline" method="post" action="/rules/{{ rule.id }}/reject">
+      <button type="submit">Reject</button>
+    </form>
+  </div>
+  {% if other_rules %}
+  <form class="stacked" method="post" action="/rules/{{ rule.id }}/supersede">
+    <label>Supersede with
+      <select name="superseded_by">
+        {% for other in other_rules %}
+        <option value="{{ other.id }}">{{ other.id }} — {{ other.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="actions">
+      <button type="submit">Supersede</button>
+    </div>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

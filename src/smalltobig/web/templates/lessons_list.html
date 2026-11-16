@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Lessons — From Small to Big{% endblock %}
+{% block content %}
+<h1>Lessons</h1>
+<p class="muted">
+  {{ lessons|length }} total, read straight from <code>lessons/*.yaml</code> — hand-edit a
+  file and the change shows up here immediately. Run <code>stb lessons</code> to sequence
+  any accepted rules not yet in a lesson.
+</p>
+{% if lessons %}
+<table>
+  <thead><tr><th>Name</th><th>Rules</th></tr></thead>
+  <tbody>
+    {% for lesson in lessons %}
+    <tr>
+      <td><a href="/lessons/{{ lesson.id }}">{{ lesson.name }}</a></td>
+      <td class="muted">{{ lesson.rule_ids|length }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">No lessons yet — accept some rules, then run <code>stb lessons</code>.</p>
+{% endif %}
+{% endblock %}

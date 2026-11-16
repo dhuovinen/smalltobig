@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}From Small to Big{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <script src="/static/htmx.min.js"></script>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 24px 16px 48px; line-height: 1.5; }
+    nav { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 24px; border-bottom: 1px solid #8883; padding-bottom: 12px; }
+    nav a { text-decoration: none; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid #8883; vertical-align: top; }
+    .muted { opacity: 0.65; font-size: 0.9em; }
+    .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; background: #8882; font-size: 0.8em; }
+    .badge.ok { background: #2a6f6f33; color: #2a6f6f; }
+    .badge.bad { background: #b4530933; color: #b45309; }
+    .badge.tier-A { background: #2a6f6f33; color: #2a6f6f; }
+    .badge.tier-B { background: #2a6f6f22; color: #2a6f6f; }
+    .badge.tier-C { background: #b4530922; color: #b45309; }
+    .badge.tier-D { background: #8882; color: inherit; }
+    .badge.box-1, .badge.box-2 { background: #b4530933; color: #b45309; }
+    .badge.box-3 { background: #8882; color: inherit; }
+    .badge.box-4, .badge.box-5 { background: #2a6f6f33; color: #2a6f6f; }
+    q { display: inline-block; font-style: italic; }
+    section.card {
+      border: 1px solid #8883; border-radius: 8px; padding: 16px; margin-top: 16px;
+    }
+    section.card.unverified { border-color: #b45309; }
+    #model-status { margin-left: auto; }
+    .model-pill { font-size: 0.8em; font-weight: 600; white-space: nowrap; }
+    .model-pill::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: currentColor; }
+    .model-pill.ok { color: #2a6f6f; }
+    .model-pill.bad { color: #b45309; }
+    form.inline { display: inline; }
+    .flash { padding: 10px 14px; border-radius: 6px; background: #8882; margin-bottom: 16px; }
+    form.stacked label { display: block; margin-top: 12px; font-weight: 600; }
+    form.stacked input, form.stacked select, form.stacked textarea {
+      width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; font: inherit;
+    }
+    textarea { min-height: 260px; font-family: ui-monospace, monospace; }
+    .actions { margin-top: 16px; display: flex; gap: 10px; }
+    button, .button {
+      font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid #8886;
+      background: #8881; cursor: pointer; text-decoration: none; color: inherit;
+    }
+    pre.source-text { white-space: pre-wrap; word-break: break-word; background: #8881; padding: 16px; border-radius: 8px; }
+    code { font-family: ui-monospace, monospace; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/home">Home</a>
+    <a href="/sources">Sources</a>
+    <a href="/rules">Rules</a>
+    <a href="/conflicts">Conflicts</a>
+    <a href="/lessons">Lessons</a>
+    <a href="/mastery">Mastery</a>
+    <a href="/sessions">Sessions</a>
+    <a href="/prep/new">Prep</a>
+    <a href="/field-notes">Field Notes</a>
+    <span id="model-status" hx-get="/status/model" hx-trigger="load, every 30s" hx-swap="innerHTML"></span>
+  </nav>
+  {% block content %}{% endblock %}
+</body>
+</html>

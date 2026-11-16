@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Debrief logged{% endblock %}
+{% block content %}
+<p class="muted"><a href="/field-notes">&larr; Field notes</a></p>
+<h1>Debrief logged</h1>
+<section class="card">
+  <p>{{ debrief.text }}</p>
+</section>
+
+<h2>{{ field_notes|length }} field note(s) extracted</h2>
+{% if field_notes %}
+<ul>
+  {% for note in field_notes %}
+  <li>
+    <span class="badge {{ 'ok' if note.success else 'bad' }}">
+      {{ 'applied' if note.success else 'missed' }}
+    </span>
+    {% set rule = rules_by_id.get(note.rule_id) %}
+    <a href="/rules/{{ note.rule_id }}">{{ rule.name if rule else note.rule_id }}</a>
+    <div class="muted"><q>{{ note.quote }}</q></div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">
+  No accepted rule was clearly addressed in this account — nothing extracted, and
+  nothing was guessed.
+</p>
+{% endif %}
+{% endblock %}

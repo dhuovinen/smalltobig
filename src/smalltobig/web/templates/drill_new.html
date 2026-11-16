@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Drill — {{ rule.name }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="/rules/{{ rule.id }}">&larr; {{ rule.name }}</a></p>
+<h1>Drill: {{ rule.name }}</h1>
+<p class="muted">{{ rule.imperative }}</p>
+<section class="card">
+  <p><strong>Here's their line:</strong></p>
+  <p>&ldquo;{{ stimulus }}&rdquo;</p>
+</section>
+<form class="stacked" method="post" action="/rules/{{ rule.id }}/drill">
+  <input type="hidden" name="stimulus" value="{{ stimulus }}">
+  <label>Your response
+    <textarea name="response" required style="min-height: 140px;"></textarea>
+  </label>
+  <div class="actions">
+    <button type="submit">Submit</button>
+  </div>
+</form>
+{% endblock %}

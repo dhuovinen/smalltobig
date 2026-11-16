@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Conflicts — From Small to Big{% endblock %}
+{% block content %}
+<h1>Conflicts</h1>
+<p class="muted">
+  The arbitration log — docs/PLAN.md calls this "plausibly the most valuable artifact
+  the app produces."
+</p>
+{% if conflicts %}
+{% for conflict in conflicts %}
+<section class="card">
+  <p>
+    <span class="badge {{ 'ok' if conflict.status.value == 'resolved' else '' }}">
+      {{ conflict.status.value }}
+    </span>
+  </p>
+  <ul>
+    {% for rule_id in conflict.between %}
+    <li>
+      <a href="/rules/{{ rule_id }}">{{ rules_by_id[rule_id].name if rule_id in rules_by_id else rule_id }}</a>
+      {% if rule_id in rules_by_id %}<div class="muted">{{ rules_by_id[rule_id].imperative }}</div>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  <p><strong>Note:</strong> {{ conflict.note }}</p>
+  {% if conflict.proposed_resolution %}
+  <p><strong>Proposed resolution:</strong> {{ conflict.proposed_resolution }}</p>
+  {% endif %}
+  {% if conflict.status.value == 'resolved' %}
+  <p><strong>Resolution:</strong> {{ conflict.resolution }}</p>
+  <p class="muted">Resolved {{ conflict.resolved_at.strftime("%Y-%m-%d") }}</p>
+  {% else %}
+  <form class="stacked" method="post" action="/conflicts/{{ conflict.id }}/resolve">
+    <label>Your resolution
+      <textarea name="resolution" required style="min-height: 100px;">{{ conflict.proposed_resolution or "" }}</textarea>
+    </label>
+    <div class="actions">
+      <button type="submit">Resolve</button>
+    </div>
+  </form>
+  {% endif %}
+</section>
+{% endfor %}
+{% else %}
+<p class="muted">No conflicts proposed yet.</p>
+{% endif %}
+{% endblock %}
