@@ -53,12 +53,15 @@ treat them as constraints on *new* work toward that plan. #3 applies under the
 
 1. **Framework content lives in YAML under `framework/`, never in Python or a
    template.** Adding a domain or changing pacing must be a data edit (FR-11, FR-14).
-   *Status:* `framework/` exists (IMPLEMENTATION.md Phase 1: htmsw, domains, personas,
-   phrasings), guarded by `tests/test_framework.py`. No application code reads it
-   yet. Each file carries `aliases` / `htmsw_web` maps to the be-better and
-   cursor-htmsw ids for migration.
+   *Status: implemented.* `framework/*.yaml` (htmsw, domains, personas, phrasings),
+   guarded by `tests/test_framework.py`, loaded and cross-checked at startup by
+   `framework/loader.py` (fails loudly, never at request time). Each file carries
+   `aliases` / `htmsw_web` maps to the be-better and cursor-htmsw ids.
 2. **The prep card makes zero model calls and zero network calls.** Enforced by an
    offline CI test. This isolates all model risk in roleplay (DECISIONS #21).
+   *Status: implemented* for the HTMSW card (`prep/compose.py`, `/htmsw/prep`,
+   `stb prep`), enforced by `tests/unit/test_prep_offline.py`. The older Phase 6
+   pre-brief at `/prep` still calls a model; it is a separate feature.
 3. **No free text about the user or any third party is ever written to disk.** Persist
    cluster flags and integer counters only; a sentinel-string sweep of every DB column
    enforces it (FR-51, DECISIONS #20).
@@ -110,7 +113,15 @@ stb serve       # web UI at http://127.0.0.1:8028 — sources, claims review,
                 # rules (accept/reject/supersede), conflicts (resolve),
                 # lessons, drills, roleplay, sessions, prep/debrief, field
                 # notes, and a mastery dashboard. --host 0.0.0.0 for LAN.
+                # HTMSW intake + prep card: /htmsw/profile, /htmsw/prep/new
+stb profile set has_kids=yes kids_stage=teen caregiving=no primary_focus=family
+stb profile show   # stored flags and the cluster they classify to
+stb prep --domain cold_networking [--cluster ID] [--target "what you know"]
+                # HTMSW prep card, offline: no model server needed
 ```
+
+`.claude/launch.json` has `stb-web` (port 8028, real data) and `stb-web-demo`
+(port 8029, throwaway data in /tmp/smalltobig-demo) for previews.
 
 Config is `STB_*` environment variables, with `.env` **auto-loaded** — env vars
 override the file. Accepting a rule writes `rules/<id>.yaml` in `STB_REPO_ROOT`

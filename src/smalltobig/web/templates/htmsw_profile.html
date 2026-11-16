@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Your profile — HTMSW{% endblock %}
+{% block content %}
+<h1>Your profile</h1>
+<p class="muted">
+  A few flags that pick which example phrasings fit you. No names, ages or details
+  are asked or stored: just these answers.
+</p>
+{% if error %}<div class="flash">{{ error }}</div>{% endif %}
+{% if cluster %}
+<p>Current cluster: <span class="badge ok">{{ cluster.label }}</span></p>
+{% endif %}
+<form class="stacked" method="post" action="/htmsw/profile">
+  {% for q in questions %}
+  <label>{{ q.prompt }}
+    {% if q.ask_if %}
+    <span class="muted">(only if {% for k, v in q.ask_if.items() %}{{ k | replace('_', ' ') }} is {{ v }}{% endfor %})</span>
+    {% endif %}
+    <select name="{{ q.id }}">
+      <option value="">—</option>
+      {% for opt in q.options %}
+      <option value="{{ opt }}" {% if answers.get(q.id) == opt %}selected{% endif %}>{{ q.label(opt) }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  {% endfor %}
+  <div class="actions">
+    <button type="submit">Save profile</button>
+  </div>
+</form>
+{% endblock %}

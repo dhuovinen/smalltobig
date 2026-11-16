@@ -13,6 +13,7 @@ import httpx
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from smalltobig.framework.loader import load_framework
 from smalltobig.web.llm_errors import handle_llm_error
 from smalltobig.web.routes.claims import router as claims_router
 from smalltobig.web.routes.conflicts import router as conflicts_router
@@ -20,6 +21,7 @@ from smalltobig.web.routes.debrief import router as debrief_router
 from smalltobig.web.routes.drills import router as drills_router
 from smalltobig.web.routes.field_notes import router as field_notes_router
 from smalltobig.web.routes.home import router as home_router
+from smalltobig.web.routes.htmsw import router as htmsw_router
 from smalltobig.web.routes.lessons import router as lessons_router
 from smalltobig.web.routes.mastery import router as mastery_router
 from smalltobig.web.routes.roleplay import router as roleplay_router
@@ -34,6 +36,8 @@ if TYPE_CHECKING:
 def create_app(settings: Settings) -> FastAPI:
     app = FastAPI(title="From Small to Big")
     app.state.settings = settings
+    # Fail at startup, never at request time, on a malformed framework.
+    app.state.framework = load_framework(settings.framework_dir)
     app.mount(
         "/static",
         StaticFiles(directory=str(Path(__file__).parent / "static")),
@@ -52,4 +56,5 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(roleplay_router)
     app.include_router(debrief_router)
     app.include_router(field_notes_router)
+    app.include_router(htmsw_router)
     return app

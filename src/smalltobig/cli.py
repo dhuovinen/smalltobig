@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import click
 
 from smalltobig.config import get_settings
 from smalltobig.doctor import run_doctor
+
+if TYPE_CHECKING:
+    from smalltobig.framework.loader import Framework
 
 
 @click.group()
@@ -182,6 +185,151 @@ def seed(rules_file: Path | None) -> None:
         f"{summary.conflicts_skipped} skipped"
     )
     click.echo("All are unverified candidates. Review them at /rules.")
+
+
+def _framework_or_exit() -> Framework:
+    from smalltobig.framework.loader import FrameworkError, load_framework
+
+    try:
+        return load_framework(get_settings().framework_dir)
+    except FrameworkError as exc:
+        click.echo(f"Framework error: {exc}", err=True)
+        sys.exit(1)
+
+
+def _parse_answers(pairs: tuple[str, ...]) -> dict[str, str]:
+    answers: dict[str, str] = {}
+    for pair in pairs:
+        key, sep, value = pair.partition("=")
+        if not sep:
+            raise click.BadParameter(f"expected question=answer, got {pair!r}")
+        answers[key.strip()] = value.strip()
+    return answers
+
+
+def _print_questions(fw: Framework) -> None:
+    click.echo("Questions (question=answer):")
+    for q in fw.questions:
+        cond = ", ".join(f"{k}={v}" for k, v in q.ask_if.items())
+        suffix = f"  (only if {cond})" if cond else ""
+        click.echo(f"  {q.id}: {' | '.join(q.options)}{suffix}")
+
+
+@main.group()
+def profile() -> None:
+    """Your HTMSW self-profile: intake flags only, never literal facts."""
+
+
+@profile.command("show")
+def profile_show() -> None:
+    """Show stored answers and the cluster they classify to."""
+    from smalltobig.intake import profile as self_profile
+    from smalltobig.intake.classify import classify, missing
+    from smalltobig.store import db
+
+    fw = _framework_or_exit()
+    conn = db.connect(get_settings().db_path)
+    try:
+        answers = self_profile.load(conn)
+    finally:
+        conn.close()
+    if not answers:
+        click.echo("No self-profile yet. Set one with: stb profile set has_kids=no ...")
+        _print_questions(fw)
+        return
+    for key, value in answers.items():
+        click.echo(f"  {key} = {value}")
+    click.echo(f"Cluster: {classify(fw, answers).label}")
+    if gaps := missing(fw, answers):
+        click.echo(f"Unanswered: {', '.join(gaps)}")
+
+
+@profile.command("set")
+@click.argument("answers", nargs=-1, required=True)
+def profile_set(answers: tuple[str, ...]) -> None:
+    """Set answers, e.g. `stb profile set has_kids=yes kids_stage=teen`."""
+    from smalltobig.intake import profile as self_profile
+    from smalltobig.intake.classify import IntakeError, classify, missing
+    from smalltobig.store import db
+
+    fw = _framework_or_exit()
+    conn = db.connect(get_settings().db_path)
+    try:
+        merged = {**self_profile.load(conn), **_parse_answers(answers)}
+        try:
+            stored = self_profile.save(conn, fw, merged)
+        except IntakeError as exc:
+            click.echo(f"Not saved: {exc}", err=True)
+            _print_questions(fw)
+            sys.exit(2)
+    finally:
+        conn.close()
+    click.echo(f"Saved. Cluster: {classify(fw, stored).label}")
+    if gaps := missing(fw, stored):
+        click.echo(f"Still unanswered: {', '.join(gaps)}")
+
+
+@profile.command("clear")
+def profile_clear() -> None:
+    """Delete the stored self-profile."""
+    from smalltobig.intake import profile as self_profile
+    from smalltobig.store import db
+
+    conn = db.connect(get_settings().db_path)
+    try:
+        self_profile.clear(conn)
+    finally:
+        conn.close()
+    click.echo("Self-profile cleared.")
+
+
+@main.command()
+@click.option(
+    "--domain",
+    "domain_id",
+    required=True,
+    help="cold_networking, casual_acquaintance, potential_collaborator or giving_back.",
+)
+@click.option(
+    "--cluster", "cluster_id", default=None, help="Override the cluster from your self-profile."
+)
+@click.option(
+    "--target",
+    "target_notes",
+    default="",
+    help="What you know about them. Used for this card only; never stored.",
+)
+def prep(domain_id: str, cluster_id: str | None, target_notes: str) -> None:
+    """Print an HTMSW prep card. No model, no network (FR-34)."""
+    from smalltobig.intake import profile as self_profile
+    from smalltobig.intake.classify import classify
+    from smalltobig.prep.compose import compose, render_text
+    from smalltobig.store import db
+
+    fw = _framework_or_exit()
+    if domain_id not in {d.id for d in fw.domains}:
+        raise click.BadParameter(
+            f"unknown domain {domain_id!r}; choose from {[d.id for d in fw.domains]}",
+            param_hint="--domain",
+        )
+    if cluster_id is None:
+        conn = db.connect(get_settings().db_path)
+        try:
+            answers = self_profile.load(conn)
+        finally:
+            conn.close()
+        if not answers:
+            click.echo(
+                "No self-profile yet. Run `stb profile set ...` or pass --cluster.", err=True
+            )
+            sys.exit(2)
+        cluster_id = classify(fw, answers).id
+    elif cluster_id not in {c.id for c in fw.clusters}:
+        raise click.BadParameter(
+            f"unknown cluster {cluster_id!r}; choose from {[c.id for c in fw.clusters]}",
+            param_hint="--cluster",
+        )
+    click.echo(render_text(compose(fw, cluster_id, domain_id, target_notes=target_notes)))
 
 
 @main.command()

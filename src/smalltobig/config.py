@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     # working directory `stb` is run from.
     repo_root: Path = Path.cwd()
 
+    # The HTMSW framework YAML (docs/REQUIREMENTS.md FR-11). Resolved relative to
+    # this package rather than the working directory, so `stb prep` works from
+    # anywhere in an editable install.
+    framework_dir: Path = Path(__file__).resolve().parents[2] / "framework"
+
     @property
     def inbox_dir(self) -> Path:
         return self.data_dir / "inbox"

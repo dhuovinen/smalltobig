@@ -112,5 +112,8 @@ icebreaker_layer:
     Low-stakes, broadly true admissions that cost nothing to say and signal the user
     is not performing.
   applies_to: step_1
+  # FR-33: what the user knows about the other person counts as "thin" below this
+  # many words. Thin info puts icebreaker phrasings first on the prep card.
+  thin_when_target_words_below: 8
   evidence_tier: C
   basis: Sarah transcript opening; same partial support as step_1.

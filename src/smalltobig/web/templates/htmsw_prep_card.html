@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Prep card — HTMSW{% endblock %}
+{% block content %}
+<p class="muted"><a href="/htmsw/prep/new">&larr; Another conversation</a></p>
+<h1>{{ card.domain_name }}</h1>
+<p>You: <span class="badge ok">{{ card.cluster_label }}</span></p>
+
+<section class="card">
+  <p><strong>Pacing:</strong> {{ card.pacing }}</p>
+  <p><strong>Move on when:</strong> {{ card.escalation_rule }}</p>
+  <p class="muted">Domain pacing is evidence tier {{ card.domain_tier }}: a hypothesis this app is testing, not a proven rule.</p>
+  {% if card.thin_target_info %}
+  <p class="muted">
+    {% if card.icebreaker_first %}You know little about them, so the opener leads with a low-stakes icebreaker.
+    {% else %}You know little about them, and there is no icebreaker for this kind of conversation yet.{% endif %}
+  </p>
+  {% endif %}
+</section>
+
+<p class="muted">Examples to adapt into your own words, not scripts to read.</p>
+
+{% for step in card.steps %}
+<section class="card">
+  <h2>{{ step.order }}. {{ step.name }} <span class="badge tier-{{ step.evidence_tier }}">tier {{ step.evidence_tier }}</span></h2>
+  <p>{{ step.coaching }}</p>
+  <p class="muted">Avoid: {{ step.antipattern }}</p>
+  {% if step.phrasings %}
+  <ul>
+    {% for p in step.phrasings %}
+    <li>&ldquo;{{ p.text }}&rdquo;
+      <span class="muted">
+        · {{ 'tested in a transcript' if p.source_kind == 'transcript' else 'prototype example, untested' }}
+        {% if p.icebreaker %}· icebreaker{% endif %}
+        {% if p.domain_agnostic %}· not sized to this kind of conversation{% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if step.gap %}
+  <p class="flash">No curated example yet: {{ step.gap }}</p>
+  {% endif %}
+  {% if step.principle_statement %}
+  <p><strong>Principle:</strong> {{ step.principle_statement }}</p>
+  {% endif %}
+  {% if step.diagnostic_prompts %}
+  <p><strong>Questions that open the real conversation:</strong></p>
+  <ul>
+    {% for prompt in step.diagnostic_prompts %}<li>{{ prompt }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "stb-web",
+      "runtimeExecutable": ".venv/bin/stb",
+      "runtimeArgs": ["serve"],
+      "port": 8028
+    },
+    {
+      "name": "stb-web-demo",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["STB_DATA_DIR=/tmp/smalltobig-demo", ".venv/bin/stb", "serve", "--port", "8029"],
+      "port": 8029
+    }
+  ]
+}
