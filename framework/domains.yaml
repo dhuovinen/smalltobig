@@ -1,0 +1,88 @@
+# HTMSW domains: the sequence is constant, its calibration is not (REQUIREMENTS.md §2.2).
+#
+# Every domain-level element is tier D (DECISIONS #23): the pacing model rests on two
+# transcripts that differ on several variables at once. Adding a fifth domain must be
+# a data edit here only (FR-14).
+#
+# `escalation_rule` is the condition for moving to the next step. `initial_stakes`
+# sizes the step_1 disclosure.
+
+version: 1
+
+domains:
+  - id: cold_networking
+    name: Cold networking
+    context: Total stranger, no prior information.
+    pacing: Slowest. Small, low-risk disclosures; escalate only on reciprocity.
+    initial_stakes: low
+    escalation_rule: >-
+      Move on only after the other person reciprocates. In the worked example,
+      "what do you do" surfaced only several exchanges in.
+    evidence_tier: D
+    basis: Sarah transcript (bar or mixer).
+    example_tested: sarah
+    aliases: {htmsw_web: cold-networking, be_better: networking}
+    diagnostic_prompts:
+      - "What's the one thing you're hoping to get out of being here tonight?"
+      - "What's keeping you busy these days outside of [their industry]?"
+
+  - id: casual_acquaintance
+    name: Casual acquaintance
+    context: Known at a shallow level; you want to deepen it.
+    pacing: Moderate. Some shared context already exists.
+    initial_stakes: low_to_moderate
+    escalation_rule: Build on the shared context without assuming closeness.
+    evidence_tier: D
+    basis: >-
+      Early-concept framing only (soccer-parent version of Mike). No full transcript;
+      phrasings for this domain are the thinnest and gaps are marked.
+    example_tested: null
+    aliases: {htmsw_web: casual-acquaintance, be_better: acquaintance}
+    diagnostic_prompts:
+      - "How have you been navigating [shared context]?"
+      - "What's been the biggest change for you since we last caught up?"
+
+  - id: potential_collaborator
+    name: Potential collaborator
+    context: Assessing fit, often with a stated purpose walking in.
+    pacing: Faster. A warm introduction and clear purpose allow earlier depth.
+    initial_stakes: moderate
+    escalation_rule: >-
+      A shared purpose allows earlier depth, but ask about their gaps before offering
+      solutions.
+    evidence_tier: D
+    basis: Mike transcript (community call).
+    example_tested: mike
+    aliases: {htmsw_web: potential-collaborator, be_better: collaborator}
+    diagnostic_prompts:
+      - "Where are you actually stretched thin or missing expertise?"
+      - "What's the gap between what you're good at and what you need to scale?"
+
+  - id: giving_back
+    name: Giving back
+    context: Offering expertise or help without expectation of return.
+    pacing: Governed by the generosity principle below.
+    initial_stakes: moderate
+    escalation_rule: Offer freely, once there is a thread to offer into; never trade.
+    evidence_tier: D
+    basis: Sarah transcript (running and accountability offer).
+    example_tested: sarah
+    aliases: {htmsw_web: giving-back, be_better: givingBack}
+    diagnostic_prompts:
+      - "Where do you see the highest return on impact right now?"
+      - "What's the operational discipline you wish you had more of?"
+    # REQUIREMENTS.md §2.4
+    principle:
+      id: generosity_without_reciprocity
+      statement: >-
+        Offers of help carry no expectation of reciprocity toward the user. Any benefit
+        that follows is the other person's initiative, not something the user pursues.
+      orientation: >-
+        Maximise societal rather than financial return, with the other person's own
+        expertise defining what impact means. They hold firsthand insight the user
+        does not.
+      closing_patterns:
+        - "Whatever you do with it from there is entirely yours."
+        - "Give the thing a witness."
+      evidence_tier: D
+      basis: Novel; no supporting literature located.
