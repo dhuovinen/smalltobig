@@ -118,7 +118,14 @@ stb profile set has_kids=yes kids_stage=teen caregiving=no primary_focus=family
 stb profile show   # stored flags and the cluster they classify to
 stb prep --domain cold_networking [--cluster ID] [--target "what you know"]
                 # HTMSW prep card, offline: no model server needed
+stb rehearse --partner sarah   # or mike; /end to finish and be scored.
+                # Needs the model server. Web: /htmsw/rehearse/new. Nothing saved.
 ```
+
+**Model choice for rehearsal (DECISIONS #25).** Thinking models (`qwen3.5`,
+`gemma4` under Ollama) return empty answers with this client, because the reasoning
+eats the token budget. Use a model that answers directly, e.g. with Ollama:
+`STB_LLM_BASE_URL=http://127.0.0.1:11434/v1 STB_LLM_MODEL=ministral-3:8b`.
 
 `.claude/launch.json` has `stb-web` (port 8028, real data) and `stb-web-demo`
 (port 8029, throwaway data in /tmp/smalltobig-demo) for previews.

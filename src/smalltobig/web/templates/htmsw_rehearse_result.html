@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}How it went — HTMSW{% endblock %}
+{% block content %}
+<p class="muted"><a href="/htmsw/rehearse/new">&larr; Rehearse again</a></p>
+<h1>Rehearsal with {{ partner.name }}</h1>
+<p class="muted">
+  One verdict per step. A pass needs a quote that appears word for word in what you
+  said, plus the checks listed under each step. A miss is not a score, just where to
+  look next time. Nothing here was saved.
+</p>
+
+{% for v in verdicts %}
+{% set step = steps[v.step_id] %}
+<section class="card">
+  <h2>{{ step.order }}. {{ step.name }}
+    <span class="badge {{ 'ok' if v.passed else 'bad' }}">{{ 'yes' if v.passed else 'not yet' }}</span>
+    <span class="badge tier-{{ step.evidence_tier }}">tier {{ step.evidence_tier }}</span>
+  </h2>
+  <p class="muted">{{ v.check }}</p>
+  {% if v.partner_quote %}<p>{{ partner.name }} said: &ldquo;{{ v.partner_quote }}&rdquo;</p>{% endif %}
+  {% if v.quote %}<p>You said: &ldquo;{{ v.quote }}&rdquo;</p>{% endif %}
+  {% if not v.passed %}<p class="muted">Why not: {{ v.reason }}.</p>
+  <p class="muted">Next time: {{ step.coaching }}</p>{% endif %}
+</section>
+{% endfor %}
+
+<section class="card">
+  <h2>Transcript</h2>
+  {% for turn in turns %}
+  <p><strong>{{ partner.name if turn.speaker == 'partner' else 'You' }}:</strong> {{ turn.text }}</p>
+  {% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Rehearse — HTMSW{% endblock %}
+{% block content %}
+<h1>Rehearse a conversation</h1>
+<p class="muted">
+  Talk to a practice partner, then get one verdict per step, each backed by a quote
+  from what you actually said. Needs the model server. Nothing from a rehearsal is saved.
+</p>
+{% for p in partners %}
+<section class="card">
+  <h2>{{ p.name }}</h2>
+  <p class="muted">Stands in for: {% for d in p.domains %}{{ domain_names[d] }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+  <p>{{ p.setting }}</p>
+  <form method="post" action="/htmsw/rehearse/start">
+    <input type="hidden" name="partner_id" value="{{ p.id }}">
+    <div class="actions"><button type="submit">Start with {{ p.name }}</button></div>
+  </form>
+</section>
+{% endfor %}
+<p class="muted">No partner yet for casual acquaintances: there is no worked example to base one on.</p>
+{% endblock %}

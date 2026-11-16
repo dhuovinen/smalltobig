@@ -85,24 +85,41 @@ steps:
     aliases: {htmsw_web: earned-ask, be_better: earnedAsk}
 
 # FR-44: one boolean item per step, each requiring a verified quoted span (FR-45).
+#
+# The judge proposes; code verifies (practice/htmsw_judge.py). Beyond the exact-match
+# check on every quote, each item can carry structural checks the judge cannot
+# talk its way past (DECISIONS #16: the judge once passed "build-on" just because a
+# turn contained a question mark):
+#   needs_partner_quote      the judge must also quote what the partner said, found
+#                            verbatim in a partner turn BEFORE the user's quoted turn
+#   no_user_question_before  no earlier user turn may contain a question mark
+#   min_prior_exchanges      at least this many partner turns AND user turns must
+#                            come before the quoted turn
 rubric:
   - id: disclosed_first
     step: step_1
+    # Wording tightened after a live run (DECISIONS #25): the judge passed "I'm a
+    # consultant... here's my card" as a disclosure. Credentials are not one.
     check: >-
-      Did the user disclose something about themselves before asking anything
-      substantive?
+      Before asking anything substantive, did the user share something honest and
+      modestly vulnerable about themselves, such as an admission of uncertainty,
+      effort or discomfort? A pitch, job title or credentials does not count.
+    no_user_question_before: true
   - id: built_on
     step: step_2
     check: >-
       Did their follow-up question reference specific content the partner had just
       revealed?
+    needs_partner_quote: true
   - id: connected_not_reset
     step: step_3
     check: >-
       Was their second disclosure connected to the partner's, and no larger than it?
+    needs_partner_quote: true
   - id: ask_was_earned
     step: step_4
     check: Did the ask come after at least two rounds of reciprocal exchange?
+    min_prior_exchanges: 2
 
 # REQUIREMENTS.md §2.3: applies across all domains when the user knows little or
 # nothing about the other person. Phrasings for it live in phrasings.yaml under

@@ -34,6 +34,26 @@ def test_health_checks_server_root_not_v1() -> None:
     assert seen_paths == ["/health"]
 
 
+def test_health_falls_back_to_models_listing() -> None:
+    # Ollama has no /health; its OpenAI-compatible /v1/models proves it is up.
+    seen_paths = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen_paths.append(request.url.path)
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"object": "list", "data": []})
+        return httpx.Response(404)
+
+    client = _client_with_transport(httpx.MockTransport(handler))
+    assert client.health() is True
+    assert seen_paths == ["/health", "/v1/models"]
+
+
+def test_health_false_when_neither_route_answers() -> None:
+    client = _client_with_transport(httpx.MockTransport(lambda _r: httpx.Response(404)))
+    assert client.health() is False
+
+
 def test_health_returns_false_on_connection_error() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("refused", request=request)

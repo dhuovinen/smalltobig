@@ -706,3 +706,52 @@ profile is built as the projection on top of it, rather than by deleting what ex
 - **Two profiles mean two test matrices.** The privacy tests (FR-50s) run under
   `abstracted`. The projection-equivalence test covers the relationship between the
   two profiles.
+
+---
+
+### 25. HTMSW rehearsal, live: what the judge got right, two bugs found, and thinking models
+
+**Tested live (2026-11-16)** against Ollama on the Mac mini, with two scripted
+conversations with Sarah. GOOD follows the four steps. BAD pitches, pivots to "did
+you catch the game", then asks for an intro.
+
+| Run | GOOD | BAD |
+|---|---|---|
+| 1, as first built | 3 of 4 passed | disclosure **wrongly passed** on "I'm a consultant… here's my card"; other 3 correctly missed |
+| 3, after the fixes below | 3 of 4 passed (build-on, with a real partner quote) | 0 of 4, all correctly missed |
+
+**What held up.** The structural checks in `htmsw.yaml` did their job. The
+DECISIONS #16 failure, where a question mark was accepted as a build-on, cannot
+recur: a build-on now needs a verbatim partner line, earlier in the transcript,
+that it responds to. "Did you catch the game" fails that.
+
+**The cost is false negatives.** The 8B judge sometimes leaves `partner_quote`
+empty even when the user's line does respond to the partner, and the strict check
+then records a miss. A concrete filled-in example in the prompt fixed this for
+build-on but not reliably for step 3. A miss shows the reason ("no earlier line from
+your partner was quoted") and is not a score, so this direction is the tolerable
+one, as in #16.
+
+**Bug 1, existing since Phase 5: the actor never received `private_instructions`.**
+`practice/roleplay.py` built its system prompt from setting, warmth, verbosity and
+hidden interest only, though `models/scenario.py` says the private instructions are
+"fed to the roleplay actor". Live, Sarah invented a job as a magazine editor. Fixed,
+with an assertion in `tests/unit/test_roleplay_actor.py`. This also changes the
+older lesson roleplay, which now gets each scenario's backstory as intended.
+
+**Bug 2: the disclosure check accepted credentials.** The FR-44 wording ("disclose
+something about themselves") let a pitch count. Reworded in `htmsw.yaml` to ask for
+an honest, modestly vulnerable admission and to exclude pitches, titles and
+credentials. REQUIREMENTS.md FR-44 keeps the short form; the YAML is the source of
+truth.
+
+**Also: the actor writes stage directions** ("*leans slightly forward*") despite
+being told not to. `htmsw_roleplay.clean()` strips multi-word spans in asterisks or
+brackets and keeps single-word *emphasis*.
+
+**Thinking models do not work with this client yet.** `qwen3.5:9b` and `gemma4:26b`
+spend the whole `max_tokens` budget on hidden reasoning and return an empty answer
+(Ollama puts the reasoning in a separate field). The actor allows 120 tokens, so every
+partner line would be blank. `ministral-3:8b` (about 10 s a rehearsal turn, 10 s to
+judge) answers directly and is what was tested. Until the client asks for reasoning
+to be off, or budgets for it, use a non-thinking model for `STB_LLM_MODEL`.
