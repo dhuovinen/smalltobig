@@ -333,6 +333,56 @@ def prep(domain_id: str, cluster_id: str | None, target_notes: str) -> None:
 
 
 @main.command()
+@click.option("--partner", "partner_id", required=True, help="sarah or mike.")
+def rehearse(partner_id: str) -> None:
+    """Rehearse with an HTMSW partner, then score the four steps. Needs the model server.
+
+    Type your lines; enter /end (or an empty line) to finish and be scored.
+    Nothing from the rehearsal is saved.
+    """
+    from smalltobig.llm.openai_compat import OpenAICompatClient
+    from smalltobig.models.session import Turn
+    from smalltobig.practice import htmsw_judge, htmsw_roleplay
+
+    fw = _framework_or_exit()
+    try:
+        partner = fw.partner(partner_id)
+    except KeyError:
+        raise click.BadParameter(
+            f"unknown partner {partner_id!r}; choose from {[p.id for p in fw.partners]}",
+            param_hint="--partner",
+        ) from None
+    settings = get_settings()
+    turns = htmsw_roleplay.opening(partner)
+    click.echo(f"{partner.setting}\n")
+    click.echo(f"{partner.name}: {turns[0].text}")
+    with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+        while True:
+            line = click.prompt("You", default="", show_default=False).strip()
+            if not line or line == "/end":
+                break
+            turns.append(Turn(speaker="user", text=line))
+            answer = htmsw_roleplay.reply(client, partner, turns)
+            turns.append(Turn(speaker="partner", text=answer))
+            click.echo(f"{partner.name}: {answer}")
+        if not any(t.speaker == "user" for t in turns):
+            click.echo("Nothing to score.")
+            return
+        click.echo("\nScoring...")
+        verdicts = htmsw_judge.judge(client, fw, turns)
+    for v in verdicts:
+        step = fw.step(v.step_id)
+        mark = "yes" if v.passed else "not yet"
+        click.echo(f"\n{step.order}. {step.name}: {mark}")
+        if v.partner_quote:
+            click.echo(f"   {partner.name} said: \"{v.partner_quote}\"")
+        if v.quote:
+            click.echo(f"   You said: \"{v.quote}\"")
+        if not v.passed:
+            click.echo(f"   Why not: {v.reason}. Next time: {step.coaching}")
+
+
+@main.command()
 @click.option("--host", default="127.0.0.1", show_default=True)
 @click.option("--port", type=int, default=None, help="Defaults to STB_PORT.")
 def serve(host: str, port: int | None) -> None:

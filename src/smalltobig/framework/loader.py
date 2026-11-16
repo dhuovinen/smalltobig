@@ -47,6 +47,9 @@ class RubricItem(_Model):
     id: str
     step: str
     check: str
+    needs_partner_quote: bool = False
+    no_user_question_before: bool = False
+    min_prior_exchanges: int = Field(default=0, ge=0)
 
 
 class IcebreakerLayer(_Model):
@@ -152,6 +155,21 @@ class Gap(_Model):
         )
 
 
+class Partner(_Model):
+    """A roleplay partner (FR-41). Every field is sent to the actor model, so none
+    may mention the framework, its steps or its rubric (FR-42)."""
+
+    id: str
+    name: str
+    domains: tuple[str, ...]
+    setting: str
+    opening_line: str
+    warmth: str
+    verbosity: str
+    hidden_interest: str
+    private_instructions: str
+
+
 class Framework(_Model):
     steps: tuple[Step, ...]
     rubric: tuple[RubricItem, ...]
@@ -162,6 +180,7 @@ class Framework(_Model):
     classification: tuple[ClassificationRule, ...]
     phrasings: tuple[Phrasing, ...]
     gaps: tuple[Gap, ...]
+    partners: tuple[Partner, ...] = ()
 
     def step(self, step_id: str) -> Step:
         return _by_id(self.steps, step_id, "step")
@@ -175,8 +194,11 @@ class Framework(_Model):
     def question(self, question_id: str) -> Question:
         return _by_id(self.questions, question_id, "question")
 
+    def partner(self, partner_id: str) -> Partner:
+        return _by_id(self.partners, partner_id, "partner")
 
-_T = TypeVar("_T", Step, Domain, Cluster, Question)
+
+_T = TypeVar("_T", Step, Domain, Cluster, Question, Partner)
 
 
 def _by_id(items: tuple[_T, ...], key: str, kind: str) -> _T:
@@ -240,6 +262,11 @@ def _check_references(fw: Framework) -> None:
             problems.append(f"phrasing {p.id}: unknown cluster")
         if p.domains != "all" and not set(p.domains) <= domain_ids:
             problems.append(f"phrasing {p.id}: unknown domain")
+    if len({p.id for p in fw.partners}) != len(fw.partners):
+        problems.append("duplicate partner ids")
+    for partner in fw.partners:
+        if not set(partner.domains) <= domain_ids:
+            problems.append(f"partner {partner.id}: unknown domain")
     for g in fw.gaps:
         if g.step not in step_ids or not set(g.clusters) <= cluster_ids:
             problems.append(f"gap for {g.step}: unknown step or cluster")
@@ -255,6 +282,7 @@ def load_framework(directory: Path) -> Framework:
     domains = _read(directory / "domains.yaml")
     personas = _read(directory / "personas.yaml")
     phrasings = _read(directory / "phrasings.yaml")
+    partners = _read(directory / "partners.yaml")
     try:
         fw = Framework(
             steps=htmsw["steps"],
@@ -266,6 +294,7 @@ def load_framework(directory: Path) -> Framework:
             classification=personas["classification"],
             phrasings=phrasings["phrasings"],
             gaps=phrasings.get("gaps", []),
+            partners=partners["partners"],
         )
     except KeyError as exc:
         raise FrameworkError(f"framework file is missing section {exc}") from exc

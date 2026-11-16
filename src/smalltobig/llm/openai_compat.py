@@ -21,13 +21,18 @@ class OpenAICompatClient:
         self._client = httpx.Client(timeout=timeout)
 
     def health(self) -> bool:
-        # mlx_lm.server exposes /health on the server root, not under /v1.
+        # mlx_lm.server exposes /health on the server root, not under /v1. Ollama
+        # and most other OpenAI-compatible servers have no such route, so fall
+        # back to the standard {base}/models listing before reporting offline
+        # (DECISIONS #25: the nav pill said "model offline" while Ollama answered).
         root = self._base_url.removesuffix("/v1")
-        try:
-            response = self._client.get(f"{root}/health")
-        except httpx.HTTPError:
-            return False
-        return response.status_code == 200
+        for url in (f"{root}/health", f"{self._base_url}/models"):
+            try:
+                if self._client.get(url).status_code == 200:
+                    return True
+            except httpx.HTTPError:
+                return False
+        return False
 
     def chat(
         self,

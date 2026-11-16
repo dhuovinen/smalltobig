@@ -56,6 +56,10 @@ def test_actor_system_prompt_carries_persona_but_never_rules() -> None:
     assert system_message["role"] == "system"
     assert "Marcus" in system_message["content"]
     assert "loves cycling" in system_message["content"]
+    # Scenario's docstring promises private_instructions reach the actor; they
+    # were silently dropped until the HTMSW live test caught a partner
+    # inventing a different job.
+    assert "You are Marcus, a coworker." in system_message["content"]
     # The actor's contract (practice/roleplay.py) never accepts a rules
     # argument at all, so there is no rubric text to leak — assert on the
     # concrete prompt as a belt-and-braces check.
