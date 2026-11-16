@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Rehearse — HTMSW{% endblock %}
 {% block content %}
+{% include "partials/_htmsw_nav.html" %}
 <h1>Rehearse a conversation</h1>
 <p class="muted">
   Talk to a practice partner, then get one verdict per step, each backed by a quote
-  from what you actually said. Needs the model server. Nothing from a rehearsal is saved.
+  from what you actually said. Needs the model server. Scoring records the outcome under
+  your privacy profile.
 </p>
 {% for p in partners %}
 <section class="card">
@@ -13,6 +15,11 @@
   <p>{{ p.setting }}</p>
   <form method="post" action="/htmsw/rehearse/start">
     <input type="hidden" name="partner_id" value="{{ p.id }}">
+    {% if p.domains | length > 1 %}
+    <label>As
+      <select name="domain_id">{% for d in p.domains %}<option value="{{ d }}">{{ domain_names[d] }}</option>{% endfor %}</select>
+    </label>
+    {% else %}<input type="hidden" name="domain_id" value="{{ p.domains[0] }}">{% endif %}
     <div class="actions"><button type="submit">Start with {{ p.name }}</button></div>
   </form>
 </section>

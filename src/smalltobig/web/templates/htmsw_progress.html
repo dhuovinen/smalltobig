@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Progress — HTMSW{% endblock %}
+{% block content %}
+{% include "partials/_htmsw_nav.html" %}
+<h1>Progress</h1>
+<p class="muted">
+  Per step and kind of conversation. A real conversation (debrief) counts {{ real_weight }}×
+  a rehearsal. The top level needs real conversations: rehearsals alone can't reach it.
+  {{ total_outcomes }} step outcome{{ '' if total_outcomes == 1 else 's' }} recorded.
+</p>
+<table>
+  <thead>
+    <tr><th>Step</th>{% for d in domains %}<th>{{ d.name }}</th>{% endfor %}</tr>
+  </thead>
+  <tbody>
+    {% for s in steps %}
+    <tr>
+      <td><strong>{{ s.order }}. {{ s.name }}</strong> <span class="badge tier-{{ s.evidence_tier }}">tier {{ s.evidence_tier }}</span></td>
+      {% for d in domains %}
+      {% set c = cells[(s.id, d.id)] %}
+      <td>
+        <span class="badge {{ 'ok' if c.level_id == 'confident' else '' }}">{{ c.level_label }}</span>
+        <div class="muted">rehearsed {{ c.rehearsal_successes }}/{{ c.rehearsal_attempts }} · real {{ c.real_successes }}/{{ c.real_attempts }}</div>
+      </td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="muted">Levels: {% for l in levels %}{{ l.label }}{% if l.min_weighted_successes %} ({{ l.min_weighted_successes }}+ weighted{% if l.min_real_successes %}, {{ l.min_real_successes }}+ real{% endif %}){% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+
+{% if privacy_profile == 'full' %}
+<section class="card">
+  <h2>Recent sessions <span class="muted">(full profile only)</span></h2>
+  {% if sessions %}
+  <ul>
+    {% for row in sessions %}
+    <li>{{ row['created_at'][:16] | replace('T', ' ') }} · {{ 'rehearsal' if row['source'] == 'rehearsal' else 'real conversation' }} · {{ row['domain_id'] | replace('_', ' ') }}{% if row['partner_id'] %} · with {{ row['partner_id'] }}{% endif %}{% if row['source'] == 'real' %} · consent: {{ row['consent'] | replace('_', ' ') }}{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="muted">None yet.</p>{% endif %}
+</section>
+{% endif %}
+{% endblock %}

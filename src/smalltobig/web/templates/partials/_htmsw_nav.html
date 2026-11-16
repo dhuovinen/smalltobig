@@ -1,0 +1,14 @@
+<nav class="muted" style="margin-bottom: 12px;">
+  <a href="/htmsw/prep/new">Prepare</a> ·
+  <a href="/htmsw/rehearse/new">Rehearse</a> ·
+  <a href="/htmsw/debrief/new">Debrief</a> ·
+  <a href="/htmsw/progress">Progress</a> ·
+  <a href="/htmsw/profile">Profile</a> ·
+  <a href="/htmsw/purge">Purge</a>
+  {% if privacy_profile %}
+  <span class="badge {{ 'bad' if privacy_profile == 'full' else 'ok' }}" style="margin-left: 8px;"
+        title="{{ 'Full-fidelity capture: transcripts, debrief text and model logs are kept (DECISIONS #24).' if privacy_profile == 'full' else 'Abstracted: only four yes/no step outcomes per session are kept.' }}">
+    privacy: {{ privacy_profile }}
+  </span>
+  {% endif %}
+</nav>

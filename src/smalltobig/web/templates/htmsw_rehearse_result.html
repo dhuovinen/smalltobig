@@ -1,12 +1,16 @@
 {% extends "base.html" %}
 {% block title %}How it went — HTMSW{% endblock %}
 {% block content %}
+{% include "partials/_htmsw_nav.html" %}
 <p class="muted"><a href="/htmsw/rehearse/new">&larr; Rehearse again</a></p>
 <h1>Rehearsal with {{ partner.name }}</h1>
 <p class="muted">
   One verdict per step. A pass needs a quote that appears word for word in what you
   said, plus the checks listed under each step. A miss is not a score, just where to
-  look next time. Nothing here was saved.
+  look next time.
+  {% if privacy_profile == 'full' %}Saved in full: transcript, verdicts and judge log.
+  {% else %}Saved: four yes/no outcomes only; the transcript was not stored.{% endif %}
+  <a href="/htmsw/progress">See progress</a>
 </p>
 
 {% for v in verdicts %}

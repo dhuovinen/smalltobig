@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Debrief — HTMSW{% endblock %}
+{% block content %}
+{% include "partials/_htmsw_nav.html" %}
+<h1>Debrief: {{ domain.name }}</h1>
+<p class="muted">
+  {% if privacy_profile == 'full' %}Saved in full: your account, these verdicts and the model log.
+  {% else %}Saved: four yes/no outcomes only. Your account was not stored.{% endif %}
+  <a href="/htmsw/progress">See progress</a>
+</p>
+{% for v in verdicts %}
+{% set step = steps[v.step_id] %}
+<section class="card">
+  <h2>{{ step.order }}. {{ step.name }}
+    <span class="badge {{ 'ok' if v.passed else 'bad' }}">{{ 'yes' if v.passed else 'not this time' }}</span>
+  </h2>
+  {% if v.quote %}<p>You wrote: &ldquo;{{ v.quote }}&rdquo;</p>{% endif %}
+  {% if not v.passed %}<p class="muted">{{ v.reason }}. Next time: {{ step.coaching }}</p>{% endif %}
+</section>
+{% endfor %}
+{% endblock %}

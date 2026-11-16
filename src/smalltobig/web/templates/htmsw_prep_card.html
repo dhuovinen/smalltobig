@@ -1,12 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Prep card — HTMSW{% endblock %}
 {% block content %}
+{% include "partials/_htmsw_nav.html" %}
 <p class="muted"><a href="/htmsw/prep/new">&larr; Another conversation</a></p>
 <h1>{{ card.domain_name }}</h1>
 <p>You: <span class="badge ok">{{ card.cluster_label }}</span></p>
 {% if partners %}
 <form method="post" action="/htmsw/rehearse/start" class="inline">
   {% for p in partners[:1] %}<input type="hidden" name="partner_id" value="{{ p.id }}">
+  <input type="hidden" name="domain_id" value="{{ card.domain_id }}">
   <button type="submit">Rehearse this with {{ p.name }}</button>{% endfor %}
 </form>
 {% endif %}

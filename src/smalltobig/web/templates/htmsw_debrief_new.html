@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Debrief — HTMSW{% endblock %}
+{% block content %}
+{% include "partials/_htmsw_nav.html" %}
+<h1>Debrief a real conversation</h1>
+<p class="muted">
+  Write freely about a conversation that already happened. The model finds which of the
+  four steps you took, each backed by a quote from what you wrote. A real conversation
+  counts more than a rehearsal.
+</p>
+<p class="muted">
+  {% if privacy_profile == 'full' %}
+  <strong>Full-fidelity profile:</strong> what you write here is kept, with the model's
+  request and reply.
+  {% else %}
+  What you write here is used once and discarded. Only four yes/no outcomes are kept.
+  {% endif %}
+</p>
+<form class="stacked" method="post" action="/htmsw/debrief">
+  <label>What kind of conversation was it?
+    <select name="domain_id" required>
+      {% for d in domains %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>What happened? What did you say, and what did they say?
+    <textarea name="account" required style="min-height: 180px;"
+      placeholder="e.g. I told her I almost skipped the event. She said she'd been meaning to get back into running, so I asked what keeps getting in the way..."></textarea>
+  </label>
+  <label>Recording consent <span class="muted">(DECISIONS #24; rules differ by place, e.g. Florida needs everyone's consent)</span>
+    <select name="consent">
+      <option value="own_side_only">I've only described my side</option>
+      <option value="obtained">Everyone involved agreed</option>
+      <option value="not_required_here">Not required where this happened</option>
+    </select>
+  </label>
+  <div class="actions"><button type="submit">Debrief</button></div>
+</form>
+{% endblock %}

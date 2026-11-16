@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, TextIO, cast
 
 import click
 
@@ -13,6 +13,7 @@ from smalltobig.doctor import run_doctor
 
 if TYPE_CHECKING:
     from smalltobig.framework.loader import Framework
+    from smalltobig.practice.htmsw_judge import StepVerdict
 
 
 @click.group()
@@ -24,6 +25,11 @@ def main() -> None:
 def doctor() -> None:
     """Check that the chat server and embedding backend actually work."""
     settings = get_settings()
+    # FR-59: the active privacy profile is always visible (DECISIONS #24).
+    click.echo(
+        f"[INFO] privacy profile: {settings.privacy_profile} "
+        f"(HTMSW store: {settings.record_db_path})"
+    )
     results = run_doctor(settings)
 
     all_ok = True
@@ -332,17 +338,43 @@ def prep(domain_id: str, cluster_id: str | None, target_notes: str) -> None:
     click.echo(render_text(compose(fw, cluster_id, domain_id, target_notes=target_notes)))
 
 
+def _print_verdicts(fw: Framework, verdicts: list[StepVerdict], partner_name: str | None) -> None:
+    for v in verdicts:
+        step = fw.step(v.step_id)
+        click.echo(f"\n{step.order}. {step.name}: {'yes' if v.passed else 'not yet'}")
+        if v.partner_quote and partner_name:
+            click.echo(f"   {partner_name} said: \"{v.partner_quote}\"")
+        if v.quote:
+            click.echo(f"   You said: \"{v.quote}\"")
+        if not v.passed:
+            click.echo(f"   Why not: {v.reason}. Next time: {step.coaching}")
+
+
+def _saved_note(profile: str) -> str:
+    if profile == "full":
+        return "Saved in full (privacy profile: full): text, verdicts and the model log."
+    return "Saved: four yes/no outcomes only (privacy profile: abstracted)."
+
+
 @main.command()
 @click.option("--partner", "partner_id", required=True, help="sarah or mike.")
-def rehearse(partner_id: str) -> None:
+@click.option(
+    "--domain", "domain_id", default=None,
+    help="Which kind of conversation this stands in for. Defaults to the partner's first.",
+)
+def rehearse(partner_id: str, domain_id: str | None) -> None:
     """Rehearse with an HTMSW partner, then score the four steps. Needs the model server.
 
-    Type your lines; enter /end (or an empty line) to finish and be scored.
-    Nothing from the rehearsal is saved.
+    Type your lines; enter /end (or an empty line) to finish and be scored. The
+    outcome is recorded under the active privacy profile (STB_PRIVACY_PROFILE).
     """
+    from datetime import UTC, datetime
+
     from smalltobig.llm.openai_compat import OpenAICompatClient
     from smalltobig.models.session import Turn
     from smalltobig.practice import htmsw_judge, htmsw_roleplay
+    from smalltobig.record import service
+    from smalltobig.record.models import SessionRecord
 
     fw = _framework_or_exit()
     try:
@@ -352,6 +384,11 @@ def rehearse(partner_id: str) -> None:
             f"unknown partner {partner_id!r}; choose from {[p.id for p in fw.partners]}",
             param_hint="--partner",
         ) from None
+    domain = domain_id or partner.domains[0]
+    if domain not in partner.domains:
+        raise click.BadParameter(
+            f"{partner.name} stands in for {list(partner.domains)}", param_hint="--domain"
+        )
     settings = get_settings()
     turns = htmsw_roleplay.opening(partner)
     click.echo(f"{partner.setting}\n")
@@ -369,17 +406,101 @@ def rehearse(partner_id: str) -> None:
             click.echo("Nothing to score.")
             return
         click.echo("\nScoring...")
-        verdicts = htmsw_judge.judge(client, fw, turns)
-    for v in verdicts:
-        step = fw.step(v.step_id)
-        mark = "yes" if v.passed else "not yet"
-        click.echo(f"\n{step.order}. {step.name}: {mark}")
-        if v.partner_quote:
-            click.echo(f"   {partner.name} said: \"{v.partner_quote}\"")
-        if v.quote:
-            click.echo(f"   You said: \"{v.quote}\"")
-        if not v.passed:
-            click.echo(f"   Why not: {v.reason}. Next time: {step.coaching}")
+        verdicts, messages, reply = htmsw_judge.judge_detailed(client, fw, turns)
+    service.save(settings, fw, SessionRecord(
+        source="rehearsal", domain_id=domain, created_at=datetime.now(UTC),
+        verdicts=tuple(verdicts), cluster_id=service.current_cluster(settings, fw),
+        partner_id=partner.id, turns=tuple(turns),
+        model_messages=tuple(dict(m) for m in messages), model_reply=reply,
+    ))
+    _print_verdicts(fw, verdicts, partner.name)
+    click.echo(f"\n{_saved_note(settings.privacy_profile)}")
+
+
+@main.command()
+@click.option("--domain", "domain_id", required=True, help="Which kind of conversation it was.")
+@click.option(
+    "--consent",
+    type=click.Choice(["own_side_only", "obtained", "not_required_here"]),
+    default="own_side_only", show_default=True,
+    help="Recording consent for the people involved (DECISIONS #24).",
+)
+@click.argument("account_file", type=click.File("r"), default="-")
+def debrief(domain_id: str, consent: str, account_file: TextIO) -> None:
+    """Debrief a real conversation. Reads your account from a file or stdin.
+
+    The model extracts which of the four steps you took; each needs a quote from your
+    account. Under the abstracted profile your account is used once and discarded.
+    """
+    from datetime import UTC, datetime
+
+    from smalltobig.llm.openai_compat import OpenAICompatClient
+    from smalltobig.practice import htmsw_debrief
+    from smalltobig.record import service
+    from smalltobig.record.models import SessionRecord
+
+    fw = _framework_or_exit()
+    if domain_id not in {d.id for d in fw.domains}:
+        raise click.BadParameter(
+            f"choose from {[d.id for d in fw.domains]}", param_hint="--domain"
+        )
+    if account_file.isatty():
+        click.echo("Write what happened, then press Ctrl-D:")
+    account = account_file.read().strip()
+    if not account:
+        click.echo("Nothing to debrief.", err=True)
+        sys.exit(2)
+    settings = get_settings()
+    with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+        verdicts, messages, reply = htmsw_debrief.extract(client, fw, account)
+    service.save(settings, fw, SessionRecord(
+        source="real", domain_id=domain_id, created_at=datetime.now(UTC),
+        verdicts=tuple(verdicts), cluster_id=service.current_cluster(settings, fw),
+        account=account, consent=consent,
+        model_messages=tuple(dict(m) for m in messages), model_reply=reply,
+    ))
+    _print_verdicts(fw, verdicts, None)
+    click.echo(f"\n{_saved_note(settings.privacy_profile)}")
+
+
+@main.command("progress")
+def progress_cmd() -> None:
+    """Show HTMSW progress per step and kind of conversation."""
+    from smalltobig.record import service
+
+    fw = _framework_or_exit()
+    settings = get_settings()
+    outcomes, table, _ = service.progress(settings, fw)
+    click.echo(
+        f"Privacy profile: {settings.privacy_profile} · {len(outcomes)} step outcomes · "
+        f"a real conversation counts {fw.progress.real_weight}x a rehearsal"
+    )
+    names = {d.id: d.name for d in fw.domains}
+    for step in sorted(fw.steps, key=lambda s: s.order):
+        click.echo(f"\n{step.order}. {step.name}")
+        for c in (c for c in table if c.step_id == step.id):
+            click.echo(
+                f"   {names[c.domain_id]:<24} {c.level_label:<12} "
+                f"rehearsed {c.rehearsal_successes}/{c.rehearsal_attempts}  "
+                f"real {c.real_successes}/{c.real_attempts}"
+            )
+
+
+@main.command()
+@click.option("--yes", is_flag=True, help="Don't ask for confirmation.")
+def purge(yes: bool) -> None:
+    """Delete your HTMSW profile and all sessions for the active privacy profile (FR-55)."""
+    from smalltobig.record import service
+
+    settings = get_settings()
+    if not yes:
+        click.confirm(
+            f"Permanently delete your HTMSW self-profile and every session stored under "
+            f"the '{settings.privacy_profile}' privacy profile?",
+            abort=True,
+        )
+    service.purge_all(settings)
+    click.echo(f"Purged ({settings.privacy_profile} profile).")
 
 
 @main.command()

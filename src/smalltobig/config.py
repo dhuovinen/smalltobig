@@ -8,6 +8,7 @@ is automatic rather than left to the caller to `source` by hand.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -47,6 +48,12 @@ class Settings(BaseSettings):
     # anywhere in an editable install.
     framework_dir: Path = Path(__file__).resolve().parents[2] / "framework"
 
+    # DECISIONS #24. `abstracted` stores only integer step outcomes (FR-51);
+    # `full` also keeps transcripts, debrief prose, verdict quotes and judge
+    # request/response logs, for baseline comparison. Each profile has its own
+    # database file under data_dir, so records never mix.
+    privacy_profile: Literal["abstracted", "full"] = "abstracted"
+
     @property
     def inbox_dir(self) -> Path:
         return self.data_dir / "inbox"
@@ -58,6 +65,11 @@ class Settings(BaseSettings):
     @property
     def db_path(self) -> Path:
         return self.data_dir / "smalltobig.db"
+
+    @property
+    def record_db_path(self) -> Path:
+        """The HTMSW session/progress store for the active privacy profile."""
+        return self.data_dir / f"htmsw-{self.privacy_profile}.db"
 
     @property
     def rules_dir(self) -> Path:
