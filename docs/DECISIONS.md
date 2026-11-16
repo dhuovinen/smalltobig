@@ -629,3 +629,69 @@ Phase 6 brings the literature to bear.
 
 Tiering your own framework's weakest parts as D is uncomfortable and correct. The
 alternative is an app that cannot tell you when it is wrong.
+
+---
+
+### 24. Privacy profiles: full-fidelity capture alongside abstracted-only
+
+#18, #20 and #22 define the privacy design the product ships with. They say nothing
+about how we find out what that design costs. To know whether abstracted-only
+persistence is a good trade, we need to see what the app could do with **no loss of
+information** (verbatim text, full attribution of who said what, detailed history) and
+compare that with how it behaves under the restricted design.
+
+**Decision:** the app runs under one of two **privacy profiles**, chosen per data
+directory:
+
+| | `full` | `abstracted` |
+|---|---|---|
+| Purpose | Baseline and research: capture everything, lose nothing | The product privacy model (#20, #22) |
+| Persisted | Verbatim intake, target-person details and URLs, roleplay and real-conversation transcripts, debrief prose, field-note text, audio and transcripts from the macOS app, speaker attribution, timestamps, model request/response logs | Cluster flags, domain, per-step counters (FR-51) |
+| Scenario data on close | Kept | Purged (FR-52) |
+| Debrief | Prose stored, plus extracted outcomes | Outcomes only (FR-53) |
+
+- **Setting:** `STB_PRIVACY_PROFILE=full|abstracted`, one setting per data directory.
+  Choosing `full` needs **no further confirmations or per-session prompts**. Friction in
+  the baseline would bias the very data it exists to collect.
+- **Default:** `abstracted` for a fresh install, so the shipped behaviour is unchanged.
+  Development and baseline installs set `full` once.
+- **Separate stores:** each profile has its own data directory and database. Records
+  carry the profile they were captured under. Nothing ever moves from an `abstracted`
+  store into a `full` one. There is no "upgrade", because the information was never
+  kept.
+- **Abstraction is a projection, not a second code path.** `abstracted` stores exactly
+  what `project(full_record)` returns, and the same function runs at write time in
+  abstracted mode. A full-fidelity store can therefore be re-read through the projection
+  at any time. Comparing "full" with "what abstracted would have kept" then needs no
+  second run, and the difference is precisely what the privacy design discards. A test
+  asserts that the projection of a full record equals what abstracted mode persists for
+  the same input.
+- **Always visible:** the active profile shows in the UI (nav bar, macOS app header) and
+  in `stb doctor` output. A user is never unsure which model their data is under.
+
+**Unchanged across both profiles:**
+
+- **Egress.** Persistence and egress are separate axes. The cloud guard in #18/#22
+  applies in both profiles: `full` decides what stays on disk, not what leaves the
+  machine.
+- The verify gate (#3), actor/judge separation (#4), boolean-plus-span rubrics (#5),
+  the 3:1 weighting (FR-54), no telemetry (FR-56) and "purge everything" (FR-55, which
+  purges the active profile's store).
+
+**What this resolves:** the conflict between FR-51 and the Phase 6 code, which stores
+field-note text. Phase 6 behaviour is effectively the `full` profile. The abstracted
+profile is built as the projection on top of it, rather than by deleting what exists.
+
+**Risks and costs:**
+
+- **Recording other people.** A `full` store holds third parties' words with
+  attribution, and with the macOS app, possibly audio. Many jurisdictions require
+  every party's consent to record a conversation, Florida among them. Roleplay and
+  simulated baselines are unaffected. For real conversations in `full`, get
+  participants' consent or capture only your own side.
+- **A `full` store is the most sensitive file the app produces.** It lives outside the
+  repository (never under `STB_REPO_ROOT`), with owner-only permissions, and relies on
+  disk encryption (FileVault) at rest.
+- **Two profiles mean two test matrices.** The privacy tests (FR-50s) run under
+  `abstracted`. The projection-equivalence test covers the relationship between the
+  two profiles.

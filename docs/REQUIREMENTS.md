@@ -162,6 +162,18 @@ See DECISIONS #23.
   counter. A step cannot reach top confidence on roleplay alone.
 - **FR-55** A single, obvious **"purge everything"** action clearing all stored state.
 - **FR-56** No telemetry, no analytics, no training use of any input.
+- **FR-57** **Privacy profiles** (DECISIONS #24). `STB_PRIVACY_PROFILE=full|abstracted`,
+  one per data directory, default `abstracted`. FR-51 to FR-53 apply under `abstracted`.
+  Under `full`, all inputs, transcripts, debrief prose, attribution and model
+  request/response logs are persisted verbatim. Selecting `full` requires no further
+  confirmation.
+- **FR-58** The `abstracted` record is a deterministic projection of the `full` record,
+  `project(full) → abstracted`, and the same function runs at write time in
+  `abstracted`. A `full` store can be viewed through the projection to compare the two
+  profiles without a second run.
+- **FR-59** The active profile is always visible in the web UI, the macOS app and
+  `stb doctor`. Profiles use separate stores, and records never move between them.
+  Egress rules (FR-60s) are identical under both profiles.
 
 ### FR-60 · Backend routing
 
@@ -253,5 +265,5 @@ researched here. Anyone picking this up should ask what it refers to before acti
 | FR-20s | Unit tests on `classify(flags) → cluster`; a test asserting no model field accepts a literal personal fact |
 | FR-30s, NFR-13 | Offline acceptance test: network down, no model server, `stb prep` still emits a full card |
 | FR-40s | Actor/judge isolation test asserting rubric text and step names appear in no actor message; span-verification test |
-| FR-50s | `tests/test_privacy.py` — sentinel-string sweep of every DB column after scenario close; schema assertion that counter tables have no TEXT column |
+| FR-50s | `tests/test_privacy.py` — under `abstracted`: sentinel-string sweep of every DB column after scenario close; schema assertion that counter tables have no TEXT column. Across profiles: projection-equivalence test (FR-58) and a test that `full` and `abstracted` resolve to different stores (FR-59) |
 | FR-60s | Routing test: `STB_LLM_BACKEND=openai` without the acknowledgement routes intake local and emits the refusal |

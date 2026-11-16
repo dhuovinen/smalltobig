@@ -19,7 +19,7 @@ are load-bearing, not speculative.
 `origin/main` are now on this branch as the *target*, not a description of the
 code. `docs/REQUIREMENTS.md` and `docs/IMPLEMENTATION.md` say "no application
 code yet" because they were written before Phases 1–6 landed; read them as the
-next direction, and read DECISIONS #18–#23 alongside #1–#17. Repo-wide plan:
+next direction, and read DECISIONS #18–#24 alongside #1–#17. Repo-wide plan:
 this engine is being combined with the `be-better` macOS app and the
 `cursor-htmsw` prototype.
 
@@ -48,8 +48,8 @@ is a decision to record there, not a refactor.
 ### Planned (HTMSW target, not yet implemented)
 
 These come from `docs/REQUIREMENTS.md`. They are not true of the current code;
-treat them as constraints on *new* work toward that plan. #3 conflicts with what
-Phase 6 stores today and is an open decision.
+treat them as constraints on *new* work toward that plan. #3 applies under the
+`abstracted` privacy profile only; see #5.
 
 1. **Framework content lives in YAML under `framework/`, never in Python or a
    template.** Adding a domain or changing pacing must be a data edit (FR-11, FR-14).
@@ -64,6 +64,13 @@ Phase 6 stores today and is an open decision.
    rather than aborting. Never collapse this to a single global switch and never
    let a stage silently use a backend the user did not select for it — field
    notes contain the words of people who are not users of this app.
+5. **Two privacy profiles, `full` and `abstracted` (DECISIONS #24).** `full` persists
+   everything verbatim with attribution, for baseline comparison, and needs no extra
+   confirmations. `abstracted` stores only `project(full_record)`, the same projection
+   function. Separate stores per profile, and the active profile is always shown.
+   Egress rules (#4 above) are identical under both: the profile governs what stays
+   on disk, not what leaves the machine. Today's Phase 6 behaviour is effectively
+   `full`.
 
 ## How to run
 
