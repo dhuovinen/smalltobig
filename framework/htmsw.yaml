@@ -1,0 +1,116 @@
+# HTMSW — How To Make Small Talk Work: the four-step sequence.
+#
+# Source of truth for the framework (REQUIREMENTS.md §2.1, FR-11..FR-13). No step,
+# definition or rubric item may be duplicated in Python, Swift or a template; code
+# references steps by `id`.
+#
+# Evidence tiers follow REQUIREMENTS.md §2.5 and DECISIONS #23. Tier D means "hypothesis
+# from two self-authored role-play transcripts", not "wrong". The app exists partly to
+# test those elements.
+#
+# `aliases` maps each id to the keys used by the two clients being merged into this
+# repo, so their data can be migrated without guessing:
+#   htmsw_web  — cursor-htmsw/app/content.js `key`
+#   be_better  — be-better Sources/CoachCore/Relationship.swift RelationshipStep rawValue
+
+version: 1
+
+steps:
+  - id: step_1
+    order: 1
+    name: Initial disclosure
+    definition: >-
+      A vulnerable, honest admission, sized to context: small and low-risk for a
+      stranger, larger with an existing warm connection.
+    coaching: Share a small, true admission sized to this setting.
+    antipattern: >-
+      Opening with a polished pitch or a question, which leaves the other person to
+      take the first risk.
+    evidence_tier: C
+    basis: >-
+      Partial support from Brooks & Yeomans 2025 (people prefer straightforward
+      self-disclosure). The vulnerability-first framing itself is novel.
+    rubric_item: disclosed_first
+    aliases: {htmsw_web: disclosure, be_better: disclosure}
+
+  - id: step_2
+    order: 2
+    name: Build-on question
+    definition: >-
+      A follow-up question engaging directly with what the other person revealed,
+      rather than pivoting back to the user.
+    coaching: Follow what they revealed; ask rather than pivoting to yourself.
+    antipattern: >-
+      Boomerasking (asking only to answer it yourself) or resetting the thread to a
+      new topic of your own.
+    evidence_tier: A
+    basis: >-
+      Independently corroborated by Huang et al. 2017 (follow-up questions increase
+      liking) and Brooks & Yeomans 2025 (boomerasking backfires). Seed rules
+      ask-follow-up-questions and no-boomerasking.
+    seed_rules: [ask-follow-up-questions, no-boomerasking]
+    rubric_item: built_on
+    aliases: {htmsw_web: build-on, be_better: buildOn}
+
+  - id: step_3
+    order: 3
+    name: Connecting micro-disclosure
+    definition: >-
+      A second, smaller disclosure linking to what they just shared, deepening the
+      thread rather than resetting it.
+    coaching: Connect a smaller true experience to their thread, without one-upping.
+    antipattern: >-
+      One-upping, or a larger or heavier disclosure that takes the thread over.
+    evidence_tier: C
+    basis: >-
+      Resolves seed conflict dont-equate-experiences vs straightforward-self-disclosure
+      (DECISIONS #23): match with a comparable, smaller disclosure. Mechanism untested.
+    seed_rules: [dont-equate-experiences, straightforward-self-disclosure]
+    rubric_item: connected_not_reset
+    aliases: {htmsw_web: micro-disclosure, be_better: connection}
+
+  - id: step_4
+    order: 4
+    name: Earned ask
+    definition: >-
+      A bigger, more direct question or offer, appropriate only after the first three
+      steps have built real exchange. Asked cold, it reads as presumptuous.
+    coaching: >-
+      Only after reciprocal exchange, make a direct question or a specific,
+      pressure-free offer. Otherwise stay with curiosity.
+    antipattern: An ask before reciprocity, or an offer with strings attached.
+    evidence_tier: D
+    basis: Two self-authored, un-blinded role-play transcripts (Mike, Sarah).
+    rubric_item: ask_was_earned
+    aliases: {htmsw_web: earned-ask, be_better: earnedAsk}
+
+# FR-44: one boolean item per step, each requiring a verified quoted span (FR-45).
+rubric:
+  - id: disclosed_first
+    step: step_1
+    check: >-
+      Did the user disclose something about themselves before asking anything
+      substantive?
+  - id: built_on
+    step: step_2
+    check: >-
+      Did their follow-up question reference specific content the partner had just
+      revealed?
+  - id: connected_not_reset
+    step: step_3
+    check: >-
+      Was their second disclosure connected to the partner's, and no larger than it?
+  - id: ask_was_earned
+    step: step_4
+    check: Did the ask come after at least two rounds of reciprocal exchange?
+
+# REQUIREMENTS.md §2.3: applies across all domains when the user knows little or
+# nothing about the other person. Phrasings for it live in phrasings.yaml under
+# layer: icebreaker.
+icebreaker_layer:
+  definition: >-
+    Low-stakes, broadly true admissions that cost nothing to say and signal the user
+    is not performing.
+  applies_to: step_1
+  evidence_tier: C
+  basis: Sarah transcript opening; same partial support as step_1.

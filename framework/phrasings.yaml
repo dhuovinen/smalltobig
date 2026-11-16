@@ -1,0 +1,232 @@
+# Example phrasings for the prep card, keyed (cluster × domain × step) (FR-31).
+#
+# Every phrasing is an example to ADAPT into the user's own words, never a script
+# (FR-36): `adapt: true` is required on every entry and enforced by test.
+#
+# `clusters` / `domains` take a list of ids or `all`. Coverage rule, enforced by
+# tests/test_framework.py: every (cluster × domain × step) has at least one phrasing,
+# or an explicit entry under `gaps`. Silent absence fails.
+#
+# `source.kind`:
+#   transcript — a line Don actually used in a worked example (framework.md appendix).
+#   prototype  — authored for the cursor-htmsw prototype (content.js) but not tested
+#                in a transcript. Usable, lower confidence.
+#
+# `calibration: domain_agnostic` marks cluster phrasings the prototype reused in every
+# domain without re-sizing the disclosure to the domain's stakes. That is a known
+# weakness of the seed content, not a design choice (see domains.yaml initial_stakes).
+#
+# Square-bracket slots such as [their interest] are for the user to fill in.
+
+version: 1
+
+phrasings:
+  # ---------------------------------------------------------------- step_1
+  - id: s1_icebreaker_almost_didnt_come
+    step: step_1
+    layer: icebreaker
+    clusters: all
+    domains: [cold_networking]
+    text: >-
+      I'll be honest, I almost didn't come. These things usually make me feel like
+      I'm working the room instead of actually talking to anyone.
+    adapt: true
+    source: {kind: transcript, ref: sarah}
+
+  - id: s1_family_rooted_showing_up
+    step: step_1
+    clusters: [family_rooted]
+    domains: all
+    calibration: domain_agnostic
+    text: >-
+      I'll be honest, I've been trying to be more intentional about actually showing
+      up in the local community rather than just working and going home. Feels a
+      little overdue.
+    adapt: true
+    source: {kind: transcript, ref: sarah}
+
+  - id: s1_empty_nester_unplanned_path
+    step: step_1
+    clusters: [empty_nester]
+    domains: all
+    calibration: domain_agnostic
+    text: >-
+      I'm in a phase of life where my kids are finishing school or moving on, and
+      it's made me think a lot about how little of my own path was actually planned.
+    adapt: true
+    source: {kind: prototype, ref: cursor-htmsw content.js, derived_from: mike}
+
+  - id: s1_sandwich_caregiver_balancing
+    step: step_1
+    clusters: [sandwich_caregiver]
+    domains: all
+    calibration: domain_agnostic
+    text: >-
+      I'll be straight with you, I'm balancing a lot right now with work and family
+      responsibilities, and I'm trying to be more intentional about where I put my
+      energy.
+    adapt: true
+    source: {kind: prototype, ref: cursor-htmsw content.js}
+
+  - id: s1_purpose_driven_giving_back
+    step: step_1
+    clusters: [purpose_driven]
+    domains: all
+    calibration: domain_agnostic
+    text: >-
+      I'm in a phase of life where I've spent a long time learning and earning, and
+      I'm actively looking for where to put real time toward giving back, not just
+      writing a check. I don't fully know yet what that looks like.
+    adapt: true
+    source: {kind: transcript, ref: mike}
+
+  # ---------------------------------------------------------------- step_2
+  - id: s2_cold_outside_work
+    step: step_2
+    clusters: all
+    domains: [cold_networking]
+    text: So outside of work, what other areas do you spend your time in?
+    adapt: true
+    source: {kind: transcript, ref: sarah}
+
+  - id: s2_acquaintance_shared_context
+    step: step_2
+    clusters: all
+    domains: [casual_acquaintance]
+    text: How have you been navigating [shared context]?
+    adapt: true
+    source: {kind: prototype, ref: cursor-htmsw content.js}
+
+  - id: s2_collaborator_what_pulled_you_in
+    step: step_2
+    clusters: all
+    domains: [potential_collaborator, giving_back]
+    text: >-
+      So tell me about you. What pulled you into this work in the first place? I
+      imagine it wasn't a straight line.
+    adapt: true
+    source: {kind: transcript, ref: mike}
+
+  # ---------------------------------------------------------------- step_3
+  - id: s3_family_rooted_window_closing
+    step: step_3
+    clusters: [family_rooted]
+    domains: all
+    calibration: domain_agnostic
+    text: >-
+      I hear you on things falling off the list. For me it's been trying to carve out
+      real time for my kids before that window closes. I keep noticing how fast it's
+      going.
+    adapt: true
+    source: {kind: transcript, ref: sarah}
+
+  - id: s3_empty_nester_said_yes_to_something_small
+    step: step_3
+    clusters: [empty_nester]
+    domains: all
+    calibration: domain_agnostic
+    text: >-
+      Watching my kids figure out their path has made me think about how little of my
+      own was planned. Most of the meaningful stuff happened because I said yes to
+      something small.
+    adapt: true
+    source: {kind: transcript, ref: mike}
+
+  - id: s3_sandwich_caregiver_aging_parents
+    step: step_3
+    clusters: [sandwich_caregiver]
+    domains: all
+    calibration: domain_agnostic
+    text: >-
+      I hear you on things falling off the list. For me it's been trying to carve out
+      real time for my family and aging parents before that window closes.
+    adapt: true
+    source: {kind: prototype, ref: cursor-htmsw content.js, derived_from: sarah}
+
+  - id: s3_purpose_driven_local_community
+    step: step_3
+    clusters: [purpose_driven]
+    domains: all
+    calibration: domain_agnostic
+    text: >-
+      I've been leaning into some local community stuff, actually, trying to figure
+      out where I can be useful beyond just work.
+    adapt: true
+    source: {kind: transcript, ref: sarah}
+
+  - id: s3_professional_operational_discipline
+    step: step_3
+    clusters: [professional_independent]
+    domains: all
+    calibration: domain_agnostic
+    text: >-
+      I've been thinking a lot about how to apply the discipline I've built in my
+      career to things that matter beyond professional metrics.
+    adapt: true
+    source: {kind: prototype, ref: cursor-htmsw content.js, derived_from: mike}
+
+  # ---------------------------------------------------------------- step_4
+  - id: s4_cold_sounding_board
+    step: step_4
+    clusters: all
+    domains: [cold_networking]
+    text: >-
+      Since you mentioned [their interest]: I don't know if this is useful or
+      completely off base, but if you ever wanted to talk through why it keeps falling
+      off the list, I'm happy to just be a sounding board. No agenda.
+    adapt: true
+    source: {kind: transcript, ref: sarah}
+
+  - id: s4_acquaintance_sounding_board
+    step: step_4
+    clusters: all
+    domains: [casual_acquaintance]
+    text: >-
+      Since you mentioned [their interest]: I don't know if this is useful, but if you
+      ever wanted to talk through [topic], I'm happy to just be a sounding board. No
+      agenda.
+    adapt: true
+    source: {kind: prototype, ref: cursor-htmsw content.js}
+
+  - id: s4_collaborator_real_gap
+    step: step_4
+    clusters: all
+    domains: [potential_collaborator]
+    text: >-
+      So where's the real gap right now? Not the polished version you'd give a donor.
+      Where are you actually stretched thin or missing expertise?
+    adapt: true
+    source: {kind: transcript, ref: mike}
+
+  - id: s4_giving_back_entirely_yours
+    step: step_4
+    clusters: all
+    domains: [giving_back]
+    text: >-
+      If you ever want to talk it through, I'm happy to be a sounding board. No
+      agenda. Whatever you do with it from there is entirely yours.
+    adapt: true
+    source: {kind: transcript, ref: sarah}
+    closing_pattern: true
+
+  - id: s4_giving_back_witness
+    step: step_4
+    clusters: all
+    domains: [giving_back]
+    text: >-
+      I'm happy to check in next week and ask how it's actually going. No pressure if
+      it hasn't happened yet. The point isn't to guilt you, it's just to give the
+      thing a witness.
+    adapt: true
+    source: {kind: transcript, ref: sarah}
+    closing_pattern: true
+
+# Known holes. A gap is honest; filler is not.
+gaps:
+  - clusters: [professional_independent]
+    domains: [casual_acquaintance, potential_collaborator, giving_back]
+    step: step_1
+    gap: >-
+      The only professional_independent opener is the mixer icebreaker ("almost
+      didn't come"), which does not fit a scheduled call or a known contact. The
+      prototype reused it everywhere anyway. Needs a transcript in these domains.

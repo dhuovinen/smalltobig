@@ -53,6 +53,10 @@ treat them as constraints on *new* work toward that plan. #3 applies under the
 
 1. **Framework content lives in YAML under `framework/`, never in Python or a
    template.** Adding a domain or changing pacing must be a data edit (FR-11, FR-14).
+   *Status:* `framework/` exists (IMPLEMENTATION.md Phase 1: htmsw, domains, personas,
+   phrasings), guarded by `tests/test_framework.py`. No application code reads it
+   yet. Each file carries `aliases` / `htmsw_web` maps to the be-better and
+   cursor-htmsw ids for migration.
 2. **The prep card makes zero model calls and zero network calls.** Enforced by an
    offline CI test. This isolates all model risk in roleplay (DECISIONS #21).
 3. **No free text about the user or any third party is ever written to disk.** Persist

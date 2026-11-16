@@ -1,0 +1,77 @@
+# Persona-cluster intake (FR-22..FR-24, FR-28). PROVISIONAL.
+#
+# The question set is expected to be rewritten after the person-on-the-street
+# interviews (REQUIREMENTS.md §6). It is data so that rewrite touches no code.
+#
+# Answers are flags, never literal facts (FR-24): no names, ages, employers or
+# conditions. Classification is a pure function of the answered flags (FR-23):
+# `classification` is evaluated top to bottom and the first matching rule wins.
+# The last rule must match everything.
+#
+# Ported from cursor-htmsw (guide.js clusterFor, content.js clusters). `htmsw_web`
+# records that prototype's stored values. Note the prototype stores "University /
+# college" as `adult`; here it is `university`.
+#
+# Not asked yet: "parents living" (FR-22). The prototype never used it, and the
+# sandwich-caregiver cluster is reached through `caregiving` instead. Add it here if
+# the interviews show it predicts anything.
+
+version: 1
+
+questions:
+  - id: has_kids
+    prompt: Do you have children?
+    options: ["yes", "no"]
+  - id: kids_stage
+    prompt: What stage are they at? Pick the one that shapes your time most.
+    ask_if: {has_kids: "yes"}
+    options: [young, teen, university, independent]
+    option_labels:
+      young: Elementary or young
+      teen: High school or teen
+      university: University or college
+      independent: Adult or independent
+    htmsw_web: {young: young, teen: teen, university: adult, independent: independent}
+  - id: caregiving
+    prompt: Do you have caregiving responsibilities, for example aging parents?
+    options: ["yes", "no"]
+  - id: primary_focus
+    prompt: What is your main focus right now?
+    options: [professional, family, giving_back]
+
+clusters:
+  - id: purpose_driven
+    label: Purpose driven
+    description: Actively looking for where to put real time toward giving back.
+    htmsw_web: purpose-driven
+  - id: sandwich_caregiver
+    label: Sandwich caregiver
+    description: Balancing children and caregiving responsibilities.
+    htmsw_web: sandwich-caregiver
+  - id: empty_nester
+    label: Empty nester
+    description: Children finishing school, at university, or independent.
+    htmsw_web: empty-nester
+  - id: family_rooted
+    label: Family rooted
+    description: Time shaped by young or school-age children.
+    htmsw_web: family-rooted
+  - id: professional_independent
+    label: Professional independent
+    description: >-
+      Default cluster: no children, or none of the above flags dominate. Work and
+      community are the main shared ground.
+    htmsw_web: professional-independent
+
+# First match wins. `when` keys are question ids; a list value means "any of".
+classification:
+  - when: {primary_focus: giving_back}
+    cluster: purpose_driven
+  - when: {has_kids: "yes", caregiving: "yes"}
+    cluster: sandwich_caregiver
+  - when: {has_kids: "yes", kids_stage: [university, independent]}
+    cluster: empty_nester
+  - when: {has_kids: "yes", kids_stage: [young, teen]}
+    cluster: family_rooted
+  - when: {}
+    cluster: professional_independent
