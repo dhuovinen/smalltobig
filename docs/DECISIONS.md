@@ -684,11 +684,22 @@ profile is built as the projection on top of it, rather than by deleting what ex
 
 **Risks and costs:**
 
-- **Recording other people.** A `full` store holds third parties' words with
-  attribution, and with the macOS app, possibly audio. Many jurisdictions require
-  every party's consent to record a conversation, Florida among them. Roleplay and
-  simulated baselines are unaffected. For real conversations in `full`, get
-  participants' consent or capture only your own side.
+- **Recording other people depends on where the conversation happens.** A `full` store
+  holds third parties' words with attribution, and with the macOS app, possibly audio.
+  Consent rules vary by jurisdiction, so the app does not hard-code one:
+  - **Florida (US):** every party must consent to a recording. Real conversations
+    captured in `full` need that consent, or capture only your own side.
+  - **Haiti:** per the project owner (2026-11-16), all-party consent is not required
+    there. This is recorded as the owner's determination and was not independently
+    verified here.
+  - **Cross-border calls:** a call with someone located in Florida can bring
+    Florida's rule into play even when you are recording from Haiti. The stricter
+    location is the safe assumption.
+  - **Roleplay and simulated baselines** involve no third party and are unaffected
+    everywhere.
+  If this becomes an app feature rather than a note, it should be a per-capture
+  "consent obtained / not required here" flag stored with the record, not a global
+  switch.
 - **A `full` store is the most sensitive file the app produces.** It lives outside the
   repository (never under `STB_REPO_ROOT`), with owner-only permissions, and relies on
   disk encryption (FileVault) at rest.
