@@ -15,9 +15,13 @@ conflicts, drills, roleplay, and debrief, each a genuinely distinct shape:
 fabrication, wrong-boolean-on-real-evidence, and wrong-rule-on-real-evidence)
 are load-bearing, not speculative.
 
-This branch stays on the original `docs/PLAN.md` direction rather than the
-HTMSW pivot on `origin/main` (see the Phase 0+1 commit message) — check
-`git log --oneline main..origin/main` before assuming the two have converged.
+**Direction (merged 2026-11-16):** the HTMSW requirements and plan from
+`origin/main` are now on this branch as the *target*, not a description of the
+code. `docs/REQUIREMENTS.md` and `docs/IMPLEMENTATION.md` say "no application
+code yet" because they were written before Phases 1–6 landed; read them as the
+next direction, and read DECISIONS #18–#23 alongside #1–#17. Repo-wide plan:
+this engine is being combined with the `be-better` macOS app and the
+`cursor-htmsw` prototype.
 
 ## Non-negotiables
 
@@ -40,6 +44,26 @@ is a decision to record there, not a refactor.
    talking to a language model.
 6. **No source-text export path.** Extracts of copyrighted material are stored
    for personal study; there is no feature that redistributes them.
+
+### Planned (HTMSW target, not yet implemented)
+
+These come from `docs/REQUIREMENTS.md`. They are not true of the current code;
+treat them as constraints on *new* work toward that plan. #3 conflicts with what
+Phase 6 stores today and is an open decision.
+
+1. **Framework content lives in YAML under `framework/`, never in Python or a
+   template.** Adding a domain or changing pacing must be a data edit (FR-11, FR-14).
+2. **The prep card makes zero model calls and zero network calls.** Enforced by an
+   offline CI test. This isolates all model risk in roleplay (DECISIONS #21).
+3. **No free text about the user or any third party is ever written to disk.** Persist
+   cluster flags and integer counters only; a sentinel-string sweep of every DB column
+   enforces it (FR-51, DECISIONS #20).
+4. **Backends are per-stage and default to local.** `intake`, `prebrief` and
+   `debrief` require `STB_SEND_FIELD_NOTES_TO_CLOUD=i-understand` before any
+   cloud backend touches them, and refusing downgrades to local and continues
+   rather than aborting. Never collapse this to a single global switch and never
+   let a stage silently use a backend the user did not select for it — field
+   notes contain the words of people who are not users of this app.
 
 ## How to run
 

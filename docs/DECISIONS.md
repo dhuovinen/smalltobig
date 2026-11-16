@@ -422,3 +422,210 @@ free-text accounts of conversations, with two accepted rules
   rule without it (docs/DECISIONS.md non-negotiable #2 in CLAUDE.md); a
   misattributed one would have quietly corrupted mastery for the wrong
   rule.
+
+---
+
+## Added after the initial design
+
+> Renumbered on merge (2026-11-16): these were #15–#20 on `origin/main`, which
+> collided with the Phase 4–6 findings above. References in REQUIREMENTS.md,
+> IMPLEMENTATION.md, PLAN.md, README.md and CLAUDE.md were updated to match.
+
+### 18. Cloud models are supported, per stage, and never by accident
+
+Both local and cloud backends are first-class. The choice is made **per
+pipeline stage**, not once globally, because the stages do not carry remotely
+comparable risk.
+
+| Stage | What would be sent to the provider | Whose words are they |
+|---|---|---|
+| `extract` | Chunks of ingested sources | Published authors |
+| `synthesize` | Claim paraphrases, for clustering and rule drafting | Published authors |
+| `conflicts` | Rule imperatives | Published authors |
+| `drill` | Your written answer to a prompt | Yours |
+| `roleplay` | Your turns in a simulated conversation | Yours |
+| `judge` | A roleplay transcript | Yours |
+| `prebrief` | Who you are about to meet and what you plan to say | Yours **and theirs** |
+| `debrief` | Your account of a real conversation that happened | Yours **and theirs** |
+
+The top three rows process published books and papers. Sending those to a
+hosted model is an ordinary API call over material that is already public, and
+it is exactly where a larger model earns its cost (see #11 — rule synthesis is
+the hardest reasoning in the project and the step most likely to defeat a 4-bit
+8B model).
+
+The bottom two rows are categorically different, and not because they are
+embarrassing. **They contain information about people who are not users of this
+app.** A debrief saying who you spoke to at an offsite, what they told you about
+their job, their divorce, their health — that is third-party personal data,
+disclosed to you in confidence in a social setting, by someone with no idea this
+software exists and no opportunity to object. Your own notes are yours to route
+wherever you like. Their words are not.
+
+**Decision:**
+
+- Default is `local` for every stage. A fresh install sends nothing anywhere.
+- `STB_LLM_BACKEND` sets a global default; `STB_LLM_BACKEND_<STAGE>` overrides
+  one stage.
+- Routing `prebrief` or `debrief` to a cloud backend requires a **second,
+  separate acknowledgement** — `STB_SEND_FIELD_NOTES_TO_CLOUD=i-understand`.
+  Without it the app refuses and runs those two stages locally rather than
+  silently doing what was asked.
+- Any cloud-routed stage prints what leaves and what does not, at startup, every
+  time. Not a first-run dialog that gets dismissed and forgotten.
+
+**Why a second acknowledgement rather than one more env var:** setting
+`STB_LLM_BACKEND=openai` is a plausible thing to do while debugging synthesis
+quality, and it is a reasonable thing to want. It should not, as a side effect,
+begin shipping other people's disclosed confidences to a third party. The two
+settings guard different decisions, so they are two settings, and the second one
+states what it is consenting to in the value itself.
+
+**Cost:** more configuration surface than a single switch, and a user who
+genuinely wants everything in the cloud has to say so twice. Accepted. The
+asymmetry is deliberate — the cheap path is the safe one.
+
+**Warning text, startup, any cloud-routed stage:**
+
+```
+!  Cloud backend active
+
+   synthesize, extract  ->  openai:gpt-5  (api.openai.com)
+   everything else      ->  local  (mlx, 127.0.0.1:3140)
+
+   Sent to api.openai.com: extracts of the sources you have ingested.
+   Published material, not your notes.
+
+   Staying on this machine: your drill answers, roleplay transcripts,
+   pre-briefs and field notes.
+```
+
+**Refusal text, `prebrief`/`debrief` routed to cloud without the acknowledgement:**
+
+```
+!  Refusing to send field notes to a cloud model. Running these locally instead.
+
+   Field notes and pre-briefs describe real conversations with real, named
+   people. Those people are not users of this app. They have not agreed to
+   have what they told you sent to a third-party API, and they cannot be
+   asked after the fact.
+
+   This is the most sensitive data From Small to Big holds. It is the one
+   thing that stays on your machine unless you say otherwise in as many words.
+
+   To route them to the cloud anyway:
+       STB_SEND_FIELD_NOTES_TO_CLOUD=i-understand
+
+   Usually the better answer: leave these local and put only `synthesize` in
+   the cloud. That is the stage a bigger model actually helps, and it reads
+   published books rather than your notes.
+```
+
+The refusal **downgrades to local and continues**. It does not abort the run —
+an error that blocks a debrief teaches you to stop writing debriefs, and the
+debrief is the one part of this app that touches reality (#14).
+
+---
+
+### 19. HTMSW is the content; the ingestion pipeline is deferred
+
+The original design derived its rules from ingested books because there was no authored
+methodology. HTMSW supplies one, tested through role-play rather than literature review.
+
+**Decision:** the framework ships authored, as YAML. `sources → claims → rules` moves to
+Phase 6, where its job is to **validate and extend** the framework rather than produce it.
+
+**Kept, not discarded:** the verify gate (#3), evidence tiers, and conflict records. The
+seed corpus becomes the evidence base — see #23.
+
+**Discarded:** lessons as the unit of work (replaced by scenarios), the generic scenario
+list (replaced by the four domains), Leitner boxes (replaced by per-step counters), and
+the TALK taxonomy as the organising spine (replaced by the four-step sequence).
+
+---
+
+### 20. Abstracted-only persistence
+
+HTMSW requires that scenario data not be persisted. The earlier design required field
+notes stored and weighted 3:1 for mastery. Directly incompatible.
+
+**Decision:** persist the abstraction, discard the prose.
+
+- **Persisted:** persona-cluster flags, domain, per-step attempt/success counters.
+- **Never persisted:** any free text written by the user or describing a third party.
+
+The 3:1 weighting of real conversations over roleplay survives (FR-54) — it was always a
+weighting on *outcomes*, and outcomes are four booleans. Storing the words was never what
+made it work.
+
+**Cost:** you cannot re-read your own debriefs, and a counter cannot be audited back to
+the conversation that moved it. Accepted. **Enforced by test**, not by intention: a
+sentinel string written into intake must appear in no database column after close.
+
+---
+
+### 21. Prep is deterministic; roleplay is the only AI surface
+
+The framework specifies pre-built example phrasings the user adapts, not freeform lines
+generated live. Taken literally, that makes the prep card pure composition from curated
+data.
+
+**Decision:** the prep card makes zero model calls and zero network calls (FR-34).
+
+**Why it is load-bearing:** the MVP ships prep and roleplay together, which doubles the
+scope and the risk. Making prep deterministic isolates *all* model risk in roleplay. If
+the judge disappoints, the prep half still ships and is independently useful. It also
+means the most privacy-sensitive path — target-person intake to prep card — never sends
+anything anywhere.
+
+**Cost:** phrasings must be written by hand, and coverage gaps are real rather than
+papered over by generation. `phrasings.yaml` marks gaps explicitly.
+
+---
+
+### 22. Target-person intake joins the field-note guard; URL fetch is opt-in
+
+#18 guarded `prebrief` and `debrief`. HTMSW introduces something more identifying than
+either: free text about a **named** third party, plus an optional link to their profile —
+a name, an employer, a bio, about someone who has no idea this app exists.
+
+**Decision:** `intake` joins `prebrief` and `debrief` behind
+`STB_SEND_FIELD_NOTES_TO_CLOUD=i-understand`.
+
+**Second, separate issue.** Fetching a supplied LinkedIn URL discloses *to LinkedIn* that
+someone is researching that person, from this user's IP, at this time — a disclosure the
+user did not ask for by pasting a link. The fetch is therefore **opt-in per scenario with
+consent at the point of use**, never a background fetch on paste, and the consent text
+says what the fetch reveals and to whom.
+
+---
+
+### 23. Framework elements carry evidence tiers, including the weak ones
+
+Reviewing HTMSW against the seed corpus produced two findings worth recording.
+
+**Step 2 is independently corroborated by two A-tier studies.** Its definition —
+*"engages directly with what the other person revealed, rather than pivoting back to the
+user"* — splits into two separate findings already in `seed/rules.yaml`:
+`ask-follow-up-questions` (Huang et al. 2017) and `no-boomerasking` (Brooks & Yeomans
+2025). Two research groups, different methods, landing on the two clauses of one
+hand-written step. Step 2 is the highest-confidence element of the framework.
+
+**Step 3 resolves seed conflict #1.** Headlee's `dont-equate-experiences` against Brooks's
+`straightforward-self-disclosure` was logged unresolved. The connecting micro-disclosure
+is the resolution, demonstrated in the Sarah transcript: match a small vulnerability with
+a **comparable, smaller** one that connects rather than one-ups, and keep it off heavy
+topics. That conflict record is updated to `resolved`.
+
+**But the rest of the framework rests on two self-authored transcripts.** Step 4, the
+domain-pacing calibration, and generosity-without-reciprocity have no independent support.
+Two role-plays, written by one person, un-blinded, outcome known in advance. That is a
+starting hypothesis, not a validation.
+
+**Decision:** tier framework elements honestly (REQUIREMENTS.md §2.5) — A for step 2, C
+for steps 1 and 3, **D for step 4, domain pacing, and the generosity principle**. Build
+the app to test them: per-step counters across domains are precisely the instrument, and
+Phase 6 brings the literature to bear.
+
+Tiering your own framework's weakest parts as D is uncomfortable and correct. The
+alternative is an app that cannot tell you when it is wrong.

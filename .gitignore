@@ -13,10 +13,11 @@ venv/
 .coverage
 htmlcov/
 
-# Config — may contain local paths and model locations
+# Config — contains API keys and local paths. The .example files are committed;
+# real config is not. (*.env does not match *.env.example, so the templates are
+# safe without a negation rule.)
 .env
 *.env
-!examples/*.env.example
 
 # Your data. Personal conversation logs and ingested copyrighted source text.
 # Never commit these.

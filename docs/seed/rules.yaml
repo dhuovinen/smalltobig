@@ -336,7 +336,17 @@ conflicts:
       the one Brooks identifies is *disguising* yours as interest in theirs.
       Disclose plainly, keep it short, return the floor. Scope
       dont-equate-experiences to difficult or painful topics specifically.
-    status: proposed
+    resolution: >
+      RESOLVED 2026-09-22 by HTMSW step 3, the connecting micro-disclosure, and
+      demonstrated in the Sarah worked example. Match a small vulnerability with
+      a COMPARABLE, SMALLER disclosure that connects to theirs rather than
+      one-upping it, and keep the move off heavy topics. Headlee's failure mode
+      is replacing their account with yours; Brooks's is disguising yours as
+      interest in theirs. A connecting micro-disclosure is neither, which is why
+      the framework prescribes it as a distinct step rather than as a caveat on
+      disclosure. See docs/DECISIONS.md #20.
+    resolved_at: 2026-09-22
+    status: resolved
 
   - between: [ask-follow-up-questions, balance-the-airtime]
     note: >

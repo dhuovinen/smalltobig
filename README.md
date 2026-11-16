@@ -8,8 +8,10 @@ have endorsed**, each traceable to the exact sentence it came from. Then it
 drills you on them, and tracks which ones survive contact with a real
 conversation.
 
-Everything runs on your machine. All inference is on-device via
-[MLX](https://github.com/ml-explore/mlx). Nothing you log leaves it.
+Runs on your machine by default, with on-device inference via
+[MLX](https://github.com/ml-explore/mlx). Cloud models are supported too — chosen
+per pipeline stage, so you can put a large model on the batch work that reads
+published books without putting your conversation notes anywhere.
 
 > **Status: Phase 6 (pre-brief/debrief).** The core loop described above is
 > now complete end to end: ingest, extract, synthesize, drill, roleplay, and
@@ -26,6 +28,12 @@ Everything runs on your machine. All inference is on-device via
 > walk the rule list one at a time instead of freely selecting; see
 > [docs/DECISIONS.md](docs/DECISIONS.md) #17. Phase 7 (voice) is explicitly
 > optional per [docs/PLAN.md](docs/PLAN.md); the core app is done.
+>
+> **Next direction:** the HTMSW framework requirements
+> ([docs/REQUIREMENTS.md](docs/REQUIREMENTS.md),
+> [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md)) are the plan for the next
+> phases. They predate the Phase 1–6 code, so where they say "no code yet",
+> read "not yet re-aligned to HTMSW".
 
 ## Why not just read the books
 
@@ -51,6 +59,25 @@ system whose entire value is provenance, that is fatal rather than annoying. So
 every extracted claim must contain a byte-exact substring of the stored source,
 verified by string search rather than trust. A model that invents a quote fails
 deterministically.
+
+## The framework
+
+HTMSW is built on **vulnerability-first disclosure** — you volunteer something modestly
+vulnerable first rather than waiting for the other person to risk it. It does the opening
+they would otherwise have to do themselves.
+
+That plays out in four steps, whose pacing scales to the situation:
+
+1. **Initial disclosure** — a vulnerable, honest admission, sized to context
+2. **Build-on question** — engaging with what *they* revealed, not pivoting back to you
+3. **Connecting micro-disclosure** — a smaller disclosure that links to theirs, deepening
+   rather than resetting the thread
+4. **Earned ask** — the bigger question or offer, appropriate only once real exchange exists
+
+Step 2 is independently corroborated by two separate studies with measured behavioural
+outcomes. Steps 1 and 3 have partial support. **Step 4, the domain pacing, and the
+generosity principle currently rest on two role-play transcripts and are labelled D-tier
+accordingly** — the app is built to test them, not to assert them.
 
 ## How it works
 
@@ -79,11 +106,44 @@ And one structural defense: a rule cannot reach top mastery on drills alone. The
 obvious failure of an app like this is that you get very good at talking to a
 language model.
 
+## Where your data goes
+
+A fresh install sends nothing anywhere. Every stage runs locally until you
+change it, and you change it one stage at a time:
+
+```bash
+STB_LLM_BACKEND=local                  # default for everything
+STB_LLM_BACKEND_SYNTHESIZE=openai      # this stage only
+```
+
+That granularity exists because the stages are not comparable. Extraction and
+synthesis read the books and papers you ingested — published material, and the
+place where a larger model genuinely helps. Drills and roleplay involve your own
+practice text. Pre-briefs and debriefs are different in kind:
+
+> Field notes describe real conversations with real, named people. Those people
+> are not users of this app. They did not agree to have what they told you sent
+> to a third-party API, and they cannot be asked afterwards.
+
+So those two stages take a second, separate acknowledgement before they will use
+a cloud backend — `STB_SEND_FIELD_NOTES_TO_CLOUD=i-understand`. Without it the
+app runs them locally and tells you it did, rather than quietly obeying. Setting
+a cloud backend to debug synthesis quality is a reasonable thing to do; it
+should not, as a side effect, start shipping other people's confidences
+offsite.
+
+Any cloud-routed stage prints what leaves and what stays at startup, every run
+— not a first-run dialog you dismiss once and forget.
+
+Full reasoning: [docs/DECISIONS.md #18](docs/DECISIONS.md).
+
 ## Documentation
 
 | Document | Contents |
 |---|---|
-| [docs/PLAN.md](docs/PLAN.md) | Architecture, data model, phasing. Start here. |
+| [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) | **Start here.** The HTMSW framework, numbered requirements, data model. |
+| [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md) | Phased build plan, executable from a cold start. |
+| [docs/PLAN.md](docs/PLAN.md) | Original architecture. Superseded in part — see REQUIREMENTS.md. |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Decisions taken, with costs; risks that can't be designed away. |
 | [docs/seed/sources.yaml](docs/seed/sources.yaml) | Ten real sources, with acquisition notes. |
 | [docs/seed/rules.yaml](docs/seed/rules.yaml) | Fifteen candidate rules with provenance, tiers, and three conflicts. |
@@ -96,9 +156,14 @@ verify gate.
 
 ## Requirements
 
-- macOS on Apple Silicon (MLX is Apple Silicon only)
 - Python ≥ 3.11
-- `mlx-lm` for chat, `mlx-embeddings` for embeddings
+- **For local inference:** macOS on Apple Silicon, plus `mlx-lm` for chat and
+  `mlx-embeddings` for embeddings. Installed via the `[mlx]` extra.
+- **For cloud inference:** an API key for any OpenAI-compatible endpoint. Works
+  on any platform.
+
+Local and cloud are not exclusive — the common setup is local for everything
+with one stage pointed at a larger hosted model.
 
 ## Licence
 
