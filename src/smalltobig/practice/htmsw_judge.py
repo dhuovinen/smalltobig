@@ -105,7 +105,7 @@ def ordered_rubric(fw: Framework) -> list[RubricItem]:
     return sorted(fw.rubric, key=lambda r: order[r.step])
 
 
-def _parse(reply: str) -> dict[int, _Judged]:
+def parse_reply(reply: str) -> dict[int, _Judged]:
     cleaned = _THINK.sub("", reply)
     try:
         raw = extract_json_array(cleaned)
@@ -149,6 +149,8 @@ def verify_verdict(
     if not judged.passed:
         return fail("the judge found no evidence in your lines")
     quote = judged.quote.strip()
+    if not quote:
+        return fail("the judge said yes but quoted nothing, so it doesn't count")
     at = _turn_index(turns, "user", quote)
     if at < 0:
         return fail("the judge's quote is not in any of your lines, so it was discarded")
@@ -180,12 +182,20 @@ def verify_verdict(
     )
 
 
-def judge(client: LlmClient, fw: Framework, turns: list[Turn]) -> list[StepVerdict]:
-    """Four verdicts in step order. Never raises on a malformed judge reply."""
+def judge_detailed(
+    client: LlmClient, fw: Framework, turns: list[Turn]
+) -> tuple[list[StepVerdict], list[ChatMessage], str]:
+    """Verdicts plus the exact request and raw reply, for the `full` profile's log."""
     messages = judge_messages(fw, turns)
     reply = client.chat(messages, max_tokens=1200, temperature=0.0)
-    judged = _parse(reply)
-    return [
+    judged = parse_reply(reply)
+    verdicts = [
         verify_verdict(item, judged.get(position), turns, item.step)
         for position, item in enumerate(ordered_rubric(fw), start=1)
     ]
+    return verdicts, messages, reply
+
+
+def judge(client: LlmClient, fw: Framework, turns: list[Turn]) -> list[StepVerdict]:
+    """Four verdicts in step order. Never raises on a malformed judge reply."""
+    return judge_detailed(client, fw, turns)[0]

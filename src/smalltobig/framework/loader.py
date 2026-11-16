@@ -69,6 +69,18 @@ class Principle(_Model):
     basis: str
 
 
+class ProgressLevel(_Model):
+    id: str
+    label: str
+    min_weighted_successes: int = Field(ge=0)
+    min_real_successes: int = Field(ge=0)
+
+
+class ProgressRules(_Model):
+    real_weight: int = Field(ge=1)
+    levels: tuple[ProgressLevel, ...]
+
+
 class Domain(_Model):
     id: str
     name: str
@@ -181,6 +193,7 @@ class Framework(_Model):
     phrasings: tuple[Phrasing, ...]
     gaps: tuple[Gap, ...]
     partners: tuple[Partner, ...] = ()
+    progress: ProgressRules
 
     def step(self, step_id: str) -> Step:
         return _by_id(self.steps, step_id, "step")
@@ -267,6 +280,9 @@ def _check_references(fw: Framework) -> None:
     for partner in fw.partners:
         if not set(partner.domains) <= domain_ids:
             problems.append(f"partner {partner.id}: unknown domain")
+    levels = fw.progress.levels
+    if not levels or levels[-1].min_weighted_successes or levels[-1].min_real_successes:
+        problems.append("progress levels must end with a level that needs nothing")
     for g in fw.gaps:
         if g.step not in step_ids or not set(g.clusters) <= cluster_ids:
             problems.append(f"gap for {g.step}: unknown step or cluster")
@@ -295,6 +311,7 @@ def load_framework(directory: Path) -> Framework:
             phrasings=phrasings["phrasings"],
             gaps=phrasings.get("gaps", []),
             partners=partners["partners"],
+            progress=htmsw["progress"],
         )
     except KeyError as exc:
         raise FrameworkError(f"framework file is missing section {exc}") from exc

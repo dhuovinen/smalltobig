@@ -65,10 +65,15 @@ treat them as constraints on *new* work toward that plan. #3 applies under the
 3. **No free text about the user or any third party is ever written to disk.** Persist
    cluster flags and integer counters only; a sentinel-string sweep of every DB column
    enforces it (FR-51, DECISIONS #20).
+   *Status: implemented for HTMSW under the `abstracted` profile* (`record/`,
+   `tests/test_privacy.py`). The older Phase 6 debrief and field notes are separate
+   and still store text.
 4. **Backends are per-stage and default to local.** `intake`, `prebrief` and
    `debrief` require `STB_SEND_FIELD_NOTES_TO_CLOUD=i-understand` before any
    cloud backend touches them, and refusing downgrades to local and continues
-   rather than aborting. Never collapse this to a single global switch and never
+   rather than aborting. *Not built yet:* one `STB_LLM_BASE_URL` serves every stage;
+   `tests/test_privacy.py` carries a skipped placeholder. Never collapse this to a
+   single global switch and never
    let a stage silently use a backend the user did not select for it — field
    notes contain the words of people who are not users of this app.
 5. **Two privacy profiles, `full` and `abstracted` (DECISIONS #24).** `full` persists
@@ -76,8 +81,12 @@ treat them as constraints on *new* work toward that plan. #3 applies under the
    confirmations. `abstracted` stores only `project(full_record)`, the same projection
    function. Separate stores per profile, and the active profile is always shown.
    Egress rules (#4 above) are identical under both: the profile governs what stays
-   on disk, not what leaves the machine. Today's Phase 6 behaviour is effectively
-   `full`.
+   on disk, not what leaves the machine. *Status: implemented.*
+   `STB_PRIVACY_PROFILE=abstracted|full` (default abstracted); each has its own
+   `data_dir/htmsw-<profile>.db` (0600), and opening one under the other profile
+   fails. `record/projection.py` is the projection; `record/store.py` writes
+   `sessions`/`verdicts` only under `full`. The older Phase 6 features (prep,
+   debrief, field notes at `/prep`, `/debrief`) predate profiles and store text.
 
 ## How to run
 
@@ -118,8 +127,13 @@ stb profile set has_kids=yes kids_stage=teen caregiving=no primary_focus=family
 stb profile show   # stored flags and the cluster they classify to
 stb prep --domain cold_networking [--cluster ID] [--target "what you know"]
                 # HTMSW prep card, offline: no model server needed
-stb rehearse --partner sarah   # or mike; /end to finish and be scored.
-                # Needs the model server. Web: /htmsw/rehearse/new. Nothing saved.
+stb rehearse --partner sarah [--domain giving_back]   # /end to finish and score
+stb debrief --domain cold_networking < account.txt   # or type it, then Ctrl-D
+stb progress    # per step x domain; real conversations count 3x
+stb purge       # active profile's HTMSW store + self-profile (FR-55)
+                # Rehearse and debrief need the model server and record under
+                # STB_PRIVACY_PROFILE (abstracted: integer outcomes only; full: everything).
+                # Web: /htmsw/{rehearse,debrief,progress,purge}
 ```
 
 **Model choice for rehearsal (DECISIONS #25).** Thinking models (`qwen3.5`,

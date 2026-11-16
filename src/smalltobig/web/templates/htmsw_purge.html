@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Purge — HTMSW{% endblock %}
+{% block content %}
+{% include "partials/_htmsw_nav.html" %}
+<h1>Purge everything</h1>
+{% if done %}
+<p class="flash">Done. Your HTMSW progress, sessions and profile for the
+  <strong>{{ privacy_profile }}</strong> privacy profile are gone.</p>
+{% else %}
+<p>
+  This deletes, permanently, your HTMSW self-profile and every session and step outcome
+  stored under the <strong>{{ privacy_profile }}</strong> privacy profile
+  {% if privacy_profile == 'full' %}(including transcripts, debrief text and model logs){% endif %}.
+  The other profile's store, and smalltobig's rules and sources, are not touched.
+</p>
+<form class="stacked" method="post" action="/htmsw/purge">
+  <label>Type <code>purge</code> to confirm
+    <input name="confirm" autocomplete="off">
+  </label>
+  <div class="actions"><button type="submit">Purge</button></div>
+</form>
+{% endif %}
+{% endblock %}

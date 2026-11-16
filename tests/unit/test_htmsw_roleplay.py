@@ -268,26 +268,28 @@ def test_partners_cover_their_domains(fw: Framework) -> None:
     assert htmsw_roleplay.partners_for(fw, "casual_acquaintance") == []
 
 
-def test_result_page_shows_verdicts_and_saves_nothing(
+def test_result_page_shows_verdicts_and_keeps_no_transcript(
     web: tuple[TestClient, list[Any]], settings: Settings
 ) -> None:
+    # Default profile is abstracted: scoring records four integer outcomes, and the
+    # transcript reaches no database file (DECISIONS #24, FR-51).
     client, _ = web
     sentinel = "SENTINEL-rehearsal-line-9917"
     page = _rehearse(client, "sarah", [sentinel])
     for name in ("Initial disclosure", "Build-on question", "Connecting micro-disclosure",
                  "Earned ask"):
         assert name in page
-    assert "Nothing here was saved" in page
-    if not settings.db_path.exists():
-        return  # the rehearsal never even opened the database
-    conn = sqlite3.connect(settings.db_path)
-    try:
-        tables = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")]
-        for table in tables:
-            for row in conn.execute(f"SELECT * FROM {table}"):  # noqa: S608
-                assert all(sentinel not in str(v) for v in row), table
-    finally:
-        conn.close()
+    assert "the transcript was not stored" in page
+    for path in settings.data_dir.glob("*.db"):
+        conn = sqlite3.connect(path)
+        try:
+            tables = [r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'")]
+            for table in tables:
+                for row in conn.execute(f"SELECT * FROM {table}"):  # noqa: S608
+                    assert all(sentinel not in str(v) for v in row), (path.name, table)
+        finally:
+            conn.close()
 
 
 def test_unknown_partner_is_404(web: tuple[TestClient, list[Any]]) -> None:
@@ -335,3 +337,8 @@ def test_judge_prompt_shows_a_filled_partner_quote() -> None:
     assert '"partner_quote": "exact words from the earlier partner line' in (
         htmsw_judge.SYSTEM_PROMPT
     )
+
+
+def test_judge_yes_without_a_quote_is_a_miss(fw: Framework) -> None:
+    v = _one(fw, 4, quote="")
+    assert not v.passed and "quoted nothing" in (v.reason or "")

@@ -755,3 +755,34 @@ spend the whole `max_tokens` budget on hidden reasoning and return an empty answ
 partner line would be blank. `ministral-3:8b` (about 10 s a rehearsal turn, 10 s to
 judge) answers directly and is what was tested. Until the client asks for reasoning
 to be off, or budgets for it, use a non-thinking model for `STB_LLM_MODEL`.
+
+---
+
+### 26. Phase 4 built: profiles, projection, counters; per-stage routing deferred
+
+**Built (2026-11-16):** DECISIONS #24 as code. `STB_PRIVACY_PROFILE` selects one of two
+stores, `data_dir/htmsw-abstracted.db` and `data_dir/htmsw-full.db`. Both are created
+0600, and a store refuses to open under the other profile. `record/projection.py` is
+the single `project(record) → outcomes`. `abstracted` writes only that.
+`full` writes it **and** the session (transcript, debrief account, consent, verdict
+quotes, model request and raw reply). Counters are derived from the integer outcome
+log rather than stored, so there is one table to purge and nothing to keep in sync.
+Weights and levels are data (`htmsw.yaml` `progress`): a real conversation counts 3×,
+and "Confident" needs two real successes, so rehearsals alone cannot reach it (FR-54).
+
+**Live check (Ollama, `ministral-3:8b`):** one real debrief recorded under both
+profiles produced identical `step_outcomes` rows in each store. The abstracted store
+held four integer rows and no trace of the name in the account; the full store held
+the account, the consent flag and the model's reply. The model once answered "yes"
+with an empty quote; the gate refused it, and the reason now says so plainly rather
+than "quote not in your account".
+
+**Deferred: per-stage backend routing (#18, #22, FR-61..FR-64).** IMPLEMENTATION.md
+lists a routing test under Phase 4, but no per-stage routing exists anywhere: one
+`STB_LLM_BASE_URL` serves every stage, and everything defaults to local. It is a
+separate feature with its own risk, so it gets its own change. `tests/test_privacy.py`
+carries a skipped placeholder so it stays visible.
+
+**Not changed:** the older Phase 6 `/prep`, `/debrief` and field notes. They predate the
+profiles and still store text in `smalltobig.db`. Folding them into the profile model,
+or retiring them in favour of the HTMSW versions, is an open decision.

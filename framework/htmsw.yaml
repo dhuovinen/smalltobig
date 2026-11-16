@@ -134,3 +134,29 @@ icebreaker_layer:
   thin_when_target_words_below: 8
   evidence_tier: C
   basis: Sarah transcript opening; same partial support as step_1.
+
+# Progress per (step x domain), from integer counters only (FR-51, FR-54).
+# A real-conversation outcome (debrief) counts `real_weight` times a rehearsal
+# outcome on the same counter. Levels are checked top to bottom; the first whose
+# minimums are all met wins. `min_real_successes` on the top level is what stops a
+# step reaching it on rehearsals alone: the app must not certify you as good at
+# talking to a language model.
+progress:
+  real_weight: 3
+  levels:
+    - id: confident
+      label: Confident
+      min_weighted_successes: 9
+      min_real_successes: 2
+    - id: practising
+      label: Practising
+      min_weighted_successes: 3
+      min_real_successes: 0
+    - id: emerging
+      label: Emerging
+      min_weighted_successes: 1
+      min_real_successes: 0
+    - id: not_started
+      label: Not started
+      min_weighted_successes: 0
+      min_real_successes: 0
