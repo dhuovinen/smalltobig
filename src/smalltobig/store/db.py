@@ -121,6 +121,14 @@ CREATE TABLE IF NOT EXISTS field_notes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_field_notes_rule_id ON field_notes(rule_id);
+
+-- HTMSW self-profile (intake/profile.py). One row; answers_json holds only
+-- option ids from framework/personas.yaml, never literal facts (FR-24).
+CREATE TABLE IF NOT EXISTS self_profile (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    answers_json TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 """
 
 

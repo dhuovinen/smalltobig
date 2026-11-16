@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Prepare a conversation — HTMSW{% endblock %}
+{% block content %}
+<h1>Prepare a conversation</h1>
+<p class="muted">
+  One upcoming conversation with one person. Works offline: no model, no network.
+</p>
+{% if not cluster %}
+<div class="flash">Set up <a href="/htmsw/profile">your profile</a> first. It takes four questions.</div>
+{% else %}
+<p>You: <span class="badge ok">{{ cluster.label }}</span> <a class="muted" href="/htmsw/profile">change</a>
+  {% if missing %}<span class="muted">· unanswered: {{ missing | join(', ') | replace('_', ' ') }}</span>{% endif %}</p>
+<form class="stacked" method="post" action="/htmsw/prep">
+  <label>What kind of conversation is it?
+    <select name="domain_id" required>
+      {% for d in domains %}
+      <option value="{{ d.id }}">{{ d.name }}: {{ d.context }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>What do you know about them? <span class="muted">(optional; used for this card only, never saved)</span>
+    <textarea name="target_notes" style="min-height: 80px;" placeholder="e.g. runs ops at a logistics startup, moved here from Chicago"></textarea>
+  </label>
+  <div class="actions">
+    <button type="submit">Build prep card</button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}
