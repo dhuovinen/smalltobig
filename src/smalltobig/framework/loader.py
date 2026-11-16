@@ -41,6 +41,7 @@ class Step(_Model):
     basis: str
     rubric_item: str
     seed_rules: tuple[str, ...] = ()
+    aliases: dict[str, str] = {}
 
 
 class RubricItem(_Model):
@@ -92,6 +93,7 @@ class Domain(_Model):
     basis: str
     diagnostic_prompts: tuple[str, ...]
     principle: Principle | None = None
+    aliases: dict[str, str] = {}
 
 
 class Question(_Model):

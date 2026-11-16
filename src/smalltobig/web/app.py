@@ -22,6 +22,7 @@ from smalltobig.web.routes.drills import router as drills_router
 from smalltobig.web.routes.field_notes import router as field_notes_router
 from smalltobig.web.routes.home import router as home_router
 from smalltobig.web.routes.htmsw import router as htmsw_router
+from smalltobig.web.routes.htmsw_api import router as htmsw_api_router
 from smalltobig.web.routes.lessons import router as lessons_router
 from smalltobig.web.routes.mastery import router as mastery_router
 from smalltobig.web.routes.roleplay import router as roleplay_router
@@ -57,4 +58,5 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(debrief_router)
     app.include_router(field_notes_router)
     app.include_router(htmsw_router)
+    app.include_router(htmsw_api_router)
     return app
