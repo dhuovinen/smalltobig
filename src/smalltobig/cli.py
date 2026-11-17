@@ -503,6 +503,22 @@ def purge(yes: bool) -> None:
     click.echo(f"Purged ({settings.privacy_profile} profile).")
 
 
+@main.command("export-framework")
+@click.argument("out", type=click.Path(dir_okay=False, writable=True), default="-")
+def export_framework(out: str) -> None:
+    """Write the framework as JSON for clients (be-better bundles it offline)."""
+    import json
+
+    from smalltobig.framework.export import export
+
+    text = json.dumps(export(_framework_or_exit()), indent=2, ensure_ascii=False) + "\n"
+    if out == "-":
+        click.echo(text, nl=False)
+    else:
+        Path(out).write_text(text, encoding="utf-8")
+        click.echo(f"Wrote {out}", err=True)
+
+
 @main.command()
 @click.option("--host", default="127.0.0.1", show_default=True)
 @click.option("--port", type=int, default=None, help="Defaults to STB_PORT.")

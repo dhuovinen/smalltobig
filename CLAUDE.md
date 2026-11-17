@@ -141,6 +141,13 @@ stb purge       # active profile's HTMSW store + self-profile (FR-55)
 eats the token budget. Use a model that answers directly, e.g. with Ollama:
 `STB_LLM_BASE_URL=http://127.0.0.1:11434/v1 STB_LLM_MODEL=ministral-3:8b`.
 
+**JSON API for clients (be-better):** `GET /api/htmsw/framework`, `POST /api/htmsw/judge`,
+`POST /api/htmsw/debrief`, `GET /api/htmsw/progress` (`web/routes/htmsw_api.py`). Results
+record under the engine's privacy profile; clients cannot widen it. No auth, like the rest
+of the UI: for the MacBook Air, serve on Tailscale only, e.g.
+`stb serve --host 100.103.52.82`. `stb export-framework` writes the framework JSON that
+be-better bundles (its `scripts/update-htmsw-framework.sh` calls it).
+
 `.claude/launch.json` has `stb-web` (port 8028, real data) and `stb-web-demo`
 (port 8029, throwaway data in /tmp/smalltobig-demo) for previews.
 
