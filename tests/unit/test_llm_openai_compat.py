@@ -102,3 +102,68 @@ def test_chat_raises_on_http_error() -> None:
     client = _client_with_transport(httpx.MockTransport(handler))
     with pytest.raises(httpx.HTTPStatusError):
         client.chat([{"role": "user", "content": "hello"}])
+
+
+def _recording_client(captured: list[httpx.Request], reply: dict[str, object],
+                      **kwargs: object) -> OpenAICompatClient:
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(200, json=reply)
+
+    client = OpenAICompatClient("http://127.0.0.1:8090/v1", **kwargs)  # type: ignore[arg-type]
+    headers = client._client.headers
+    client._client = httpx.Client(transport=httpx.MockTransport(handler), headers=headers)
+    return client
+
+
+OK_REPLY = {"choices": [{"message": {"content": "hi"}}]}
+
+
+def test_api_key_is_sent_as_bearer_on_every_request() -> None:
+    seen: list[httpx.Request] = []
+    client = _recording_client(seen, OK_REPLY, api_key="test-key-123")
+    client.chat([{"role": "user", "content": "x"}])
+    client.health()
+    assert seen and all(r.headers["authorization"] == "Bearer test-key-123" for r in seen)
+
+
+def test_no_authorization_header_without_a_key() -> None:
+    seen: list[httpx.Request] = []
+    _recording_client(seen, OK_REPLY).chat([{"role": "user", "content": "x"}])
+    assert "authorization" not in seen[0].headers
+
+
+@pytest.mark.parametrize(("setting", "expected"), [(False, False), (True, True)])
+def test_thinking_switch_is_sent_when_set(setting: bool, expected: bool) -> None:
+    seen: list[httpx.Request] = []
+    _recording_client(seen, OK_REPLY, enable_thinking=setting).chat(
+        [{"role": "user", "content": "x"}])
+    body = json.loads(seen[0].content)
+    assert body["chat_template_kwargs"] == {"enable_thinking": expected}
+
+
+def test_thinking_switch_omitted_by_default() -> None:
+    seen: list[httpx.Request] = []
+    _recording_client(seen, OK_REPLY).chat([{"role": "user", "content": "x"}])
+    assert "chat_template_kwargs" not in json.loads(seen[0].content)
+
+
+def test_null_content_is_empty_not_the_string_none() -> None:
+    seen: list[httpx.Request] = []
+    reply = {"choices": [{"message": {"content": None, "reasoning": "thinking..."}}]}
+    assert _recording_client(seen, reply).chat([{"role": "user", "content": "x"}]) == ""
+
+
+def test_settings_carry_the_key_without_ever_showing_it(monkeypatch: pytest.MonkeyPatch) -> None:
+    from smalltobig.config import Settings
+
+    monkeypatch.setenv("STB_LLM_API_KEY", "secret-abc-999")
+    monkeypatch.setenv("STB_LLM_ENABLE_THINKING", "false")
+    monkeypatch.setenv("STB_LLM_TIMEOUT", "120")
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
+    options = settings.llm_options()
+    assert options["api_key"] == "secret-abc-999"
+    assert options["enable_thinking"] is False and options["timeout"] == 120.0
+    assert settings.llm_options(timeout=2.0)["timeout"] == 2.0
+    for text in (repr(settings), str(settings), settings.model_dump_json()):
+        assert "secret-abc-999" not in text

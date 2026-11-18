@@ -142,7 +142,7 @@ MAX_TURNS = 40
 
 
 def _client(settings: Settings) -> OpenAICompatClient:
-    return OpenAICompatClient(settings.llm_base_url, model=settings.llm_model)
+    return OpenAICompatClient(settings.llm_base_url, **settings.llm_options())
 
 
 def _partner(fw: Framework, partner_id: str) -> Partner:

@@ -136,6 +136,12 @@ stb purge       # active profile's HTMSW store + self-profile (FR-55)
                 # Web: /htmsw/{rehearse,debrief,progress,purge}
 ```
 
+**Model configuration, all in `.env` (git-ignored) or `STB_*` env vars, read by
+`config.py` and passed to every client through `Settings.llm_options()`:**
+`STB_LLM_BASE_URL` (provider), `STB_LLM_MODEL`, `STB_LLM_API_KEY` (Bearer, a
+`SecretStr`, never printed), `STB_LLM_ENABLE_THINKING` (`false` to suppress hidden
+reasoning), `STB_LLM_TIMEOUT` (seconds). See `examples/config/smalltobig.env.example`.
+
 **Model choice for rehearsal (DECISIONS #25).** Thinking models (`qwen3.5`,
 `gemma4` under Ollama) return empty answers with this client, because the reasoning
 eats the token budget. Use a model that answers directly, e.g. with Ollama:

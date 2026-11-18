@@ -48,7 +48,7 @@ def run_extraction(
     if source is None:
         raise HTTPException(status_code=404, detail="source not found")
 
-    with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+    with OpenAICompatClient(settings.llm_base_url, **settings.llm_options()) as client:
         extract_source(conn, settings, client, source_id)
 
     return RedirectResponse(f"/sources/{source_id}/claims", status_code=303)

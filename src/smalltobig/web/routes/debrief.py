@@ -54,7 +54,7 @@ def create_prep_card(
     event: Annotated[str, Form()],
 ) -> Response:
     weak_rules = _weakest_accepted_rules(conn)
-    with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+    with OpenAICompatClient(settings.llm_base_url, **settings.llm_options()) as client:
         content = generate_prep_card(client, event)
 
     return templates.TemplateResponse(
@@ -76,7 +76,7 @@ def create_debrief(
     conn: DbDep,
     text: Annotated[str, Form()],
 ) -> Response:
-    with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+    with OpenAICompatClient(settings.llm_base_url, **settings.llm_options()) as client:
         debrief, field_notes = submit_debrief(conn, client, text)
 
     rules_by_id = {rule.id: rule for rule in repo_rules.list_all(conn)}

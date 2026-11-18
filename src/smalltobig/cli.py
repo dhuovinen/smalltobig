@@ -71,7 +71,7 @@ def extract(source_id: str) -> None:
     settings = get_settings()
     conn = db.connect(settings.db_path)
     try:
-        with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+        with OpenAICompatClient(settings.llm_base_url, **settings.llm_options()) as client:
             summary = extract_source(conn, settings, client, source_id)
     except UnknownSourceError as exc:
         click.echo(str(exc), err=True)
@@ -119,7 +119,7 @@ def synthesize(threshold: float | None) -> None:
 
     conn = db.connect(settings.db_path)
     try:
-        with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+        with OpenAICompatClient(settings.llm_base_url, **settings.llm_options()) as client:
             summary = (
                 synthesize_rules(conn, client, embed, cluster_threshold=threshold)
                 if threshold is not None
@@ -149,7 +149,7 @@ def lessons() -> None:
     settings = get_settings()
     conn = db.connect(settings.db_path)
     try:
-        with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+        with OpenAICompatClient(settings.llm_base_url, **settings.llm_options()) as client:
             summary = generate_lessons(conn, settings, client)
     finally:
         conn.close()
@@ -393,7 +393,7 @@ def rehearse(partner_id: str, domain_id: str | None) -> None:
     turns = htmsw_roleplay.opening(partner)
     click.echo(f"{partner.setting}\n")
     click.echo(f"{partner.name}: {turns[0].text}")
-    with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+    with OpenAICompatClient(settings.llm_base_url, **settings.llm_options()) as client:
         while True:
             line = click.prompt("You", default="", show_default=False).strip()
             if not line or line == "/end":
@@ -451,7 +451,7 @@ def debrief(domain_id: str, consent: str, account_file: TextIO) -> None:
         click.echo("Nothing to debrief.", err=True)
         sys.exit(2)
     settings = get_settings()
-    with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+    with OpenAICompatClient(settings.llm_base_url, **settings.llm_options()) as client:
         verdicts, messages, reply = htmsw_debrief.extract(client, fw, account)
     service.save(settings, fw, SessionRecord(
         source="real", domain_id=domain_id, created_at=datetime.now(UTC),

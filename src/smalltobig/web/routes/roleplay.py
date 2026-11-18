@@ -63,7 +63,7 @@ def start_roleplay(
     if scenario is None:
         raise HTTPException(status_code=404, detail="scenario not found")
 
-    with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+    with OpenAICompatClient(settings.llm_base_url, **settings.llm_options()) as client:
         opening_line = generate_opening_line(client, scenario)
 
     turns = [Turn(speaker="partner", text=opening_line)]
@@ -96,7 +96,7 @@ def continue_roleplay(
         raise HTTPException(status_code=404, detail="scenario not found")
 
     turns = [*_load_turns(turns_json), Turn(speaker="user", text=reply)]
-    with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+    with OpenAICompatClient(settings.llm_base_url, **settings.llm_options()) as client:
         partner_line = generate_reply(client, scenario, turns)
     turns.append(Turn(speaker="partner", text=partner_line))
 
@@ -122,7 +122,7 @@ def finish_roleplay(
     turns_json: Annotated[str, Form()],
 ) -> Response:
     turns = _load_turns(turns_json)
-    with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+    with OpenAICompatClient(settings.llm_base_url, **settings.llm_options()) as client:
         try:
             session = end_roleplay_session(
                 conn, settings, client, lesson_id, scenario_id, turns

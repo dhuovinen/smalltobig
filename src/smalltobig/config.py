@@ -8,9 +8,19 @@ is automatic rather than left to the caller to `source` by hand.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypedDict
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class LlmOptions(TypedDict):
+    """Keyword arguments for OpenAICompatClient (see Settings.llm_options)."""
+
+    model: str
+    api_key: str
+    enable_thinking: bool | None
+    timeout: float
 
 
 class Settings(BaseSettings):
@@ -28,6 +38,15 @@ class Settings(BaseSettings):
     # default of 8000 — see docs/DECISIONS.md #2.
     llm_base_url: str = "http://127.0.0.1:3140/v1"
     llm_model: str = ""
+    # Bearer key for servers that require one, even locally (omlx-serve, LM Studio
+    # with auth). Kept as a secret: never logged, printed or rendered. Empty = none.
+    llm_api_key: SecretStr = SecretStr("")
+    # Thinking models spend the token budget on hidden reasoning and can return an
+    # empty answer (DECISIONS #25). False sends
+    # chat_template_kwargs.enable_thinking=false; None sends nothing.
+    llm_enable_thinking: bool | None = None
+    # Seconds per chat request. Larger models may need more than the default.
+    llm_timeout: float = 30.0
 
     # Embeddings load in-process via mlx-embeddings, which ships no server.
     # Default is a small, fast model good for smoke-testing `stb doctor`;
@@ -53,6 +72,15 @@ class Settings(BaseSettings):
     # request/response logs, for baseline comparison. Each profile has its own
     # database file under data_dir, so records never mix.
     privacy_profile: Literal["abstracted", "full"] = "abstracted"
+
+    def llm_options(self, *, timeout: float | None = None) -> LlmOptions:
+        """Keyword arguments for OpenAICompatClient: the one place they are assembled."""
+        return {
+            "model": self.llm_model,
+            "api_key": self.llm_api_key.get_secret_value(),
+            "enable_thinking": self.llm_enable_thinking,
+            "timeout": self.llm_timeout if timeout is None else timeout,
+        }
 
     @property
     def inbox_dir(self) -> Path:
