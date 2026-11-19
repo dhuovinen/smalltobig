@@ -816,3 +816,53 @@ another look if it repeats.
 omlx also answers on the Tailscale and LAN addresses (100.103.52.82, 192.168.1.112),
 key-enforced, so be-better on the MacBook Air can use the same model for its live
 suggestions.
+
+---
+
+### 28. Judge reference set and its baseline; step 4 does not recognise offers
+
+**Change (2026-11-19, docs/FOCUS.md Step 0):** `evals/htmsw_reference.yaml` holds
+10 hand-labelled Sarah rehearsals and 6 debrief accounts, with the expected verdict
+for every step. `stb reference-check` runs them through the same judge and debrief
+code the app uses and records nothing. `tests/unit/test_reference_set.py` checks
+that the labels obey the rubric's structural rules, and its `mlx` test fails if any
+step drops below the baseline below. The scripts behind #25 and #27 were never
+committed; this set replaces them and includes their GOOD/BAD shapes and the
+step-4 wording that #27 saw missed.
+
+**Baseline** (`Qwen-AgentWorld-35B-A3B-oQ4`, thinking off; five runs). Temperature 0
+is not fully deterministic on this server: the first two runs matched exactly, then
+two rehearsal steps moved by one case. The test floor is the lowest score seen.
+
+| Step | Rehearsals (range) | Debriefs | Floor |
+|---|---|---|---|
+| 1. Initial disclosure | 10/10 | 6/6 | 10, 6 |
+| 2. Build-on question | 9–10/10 (wrong not yet) | 6/6 | 9, 6 |
+| 3. Connecting micro-disclosure | 8–9/10 (wrong yes) | 6/6 | 8, 6 |
+| 4. Earned ask | 9/10 (1 wrong yes) | **4/6 (2 wrong not yet)** | 9, 4 |
+
+Every step-4 failure below occurred in all five runs.
+
+**Findings.**
+
+- **Debrief step 4 misses every offer.** Both accounts that end in a no-strings
+  offer ("offered to check in with her next week, no strings"; "I could send her the
+  physio's name") were scored "doesn't show this step". The step 4 check asks only
+  whether "the ask" came after two exchanges. The framework's own coaching counts a
+  specific, pressure-free offer, so the check wording is the likely cause, not the
+  model. This is the #27 miss, now reproduced and explained.
+- **An oversized disclosure passed step 3, and step 4 passed with no ask at all**
+  (`oversized_connect`): a second disclosure about divorce and depression, after the
+  partner mentioned not having time to run, was judged "connected and no larger".
+  The same case passed step 4 although the user made no ask or offer.
+- **One build-on is missed in some runs** (`question_before_disclosure`, 2 of 5):
+  "What made you come anyway?" after "I nearly skipped tonight myself". Low priority.
+- **Step 3's size check is weak.** Besides `oversized_connect` (every run), one run
+  passed a second step-3 case that should have failed; that run's case list was not
+  kept. `stb reference-check` prints the cases, so the next run will show if it recurs.
+
+**Not changed yet.** Rewording step 4 in `htmsw.yaml` to name offers ("an ask, or a
+specific no-strings offer") is the obvious fix. It is a framework change, so it gets
+its own commit and must clear this baseline. The trial in FOCUS.md should not start
+until that decision is made: real debriefs are where step 4 is judged most, and a
+judge that never credits an offer would make the trial's step-4 numbers meaningless.
