@@ -786,3 +786,33 @@ carries a skipped placeholder so it stays visible.
 **Not changed:** the older Phase 6 `/prep`, `/debrief` and field notes. They predate the
 profiles and still store text in `smalltobig.db`. Folding them into the profile model,
 or retiring them in favour of the HTMSW versions, is an open decision.
+
+---
+
+### 27. Model provider is configuration; Qwen-AgentWorld 35B-A3B via omlx-serve tested live
+
+**Change (2026-11-18):** provider URL, model, API key, thinking switch and timeout
+are all `STB_LLM_*` settings, assembled in one place (`Settings.llm_options()`) for
+every client. `STB_LLM_API_KEY` is sent as a Bearer header and held as a `SecretStr`,
+so it never appears in printed or logged settings. Motivated by omlx-serve, which is
+local but requires a key.
+
+**Live check, same scripts as #25** (`Qwen-AgentWorld-35B-A3B-oQ4` on omlx-serve,
+Mac mini, `STB_LLM_ENABLE_THINKING=false`):
+
+| Run | ministral-3:8b (#25) | Qwen-AgentWorld 35B-A3B |
+|---|---|---|
+| GOOD rehearsal | 3 of 4 (step 3 missed: no partner quote) | **4 of 4**, partner quotes on build-on and connect |
+| BAD rehearsal | 0 of 4 | 0 of 4 |
+| Debrief (Priya account) | 3 of 4 (step 4: empty-quote "yes") | 3 of 4 (step 4: "account doesn't show this step") |
+| Speed | ~10 s per turn, ~10 s to judge | ~1 s per turn, ~5 s to judge |
+
+The partner-quote false negatives from #25 did not recur. With thinking off, no reply
+came back empty. The debrief's step-4 miss looks like a false negative: the account
+says "offered to check in with her next week, no strings". The debrief has no
+structural checks to lean on, so it is the more model-sensitive surface. Worth
+another look if it repeats.
+
+omlx also answers on the Tailscale and LAN addresses (100.103.52.82, 192.168.1.112),
+key-enforced, so be-better on the MacBook Air can use the same model for its live
+suggestions.
