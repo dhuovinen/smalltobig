@@ -18,4 +18,5 @@
   {% if not v.passed %}<p class="muted">{{ v.reason }}. Next time: {{ step.coaching }}</p>{% endif %}
 </section>
 {% endfor %}
+{% include "partials/_htmsw_feedback.html" %}
 {% endblock %}

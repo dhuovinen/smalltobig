@@ -152,7 +152,11 @@ eats the token budget. Use a model that answers directly, e.g. with Ollama:
 `STB_LLM_BASE_URL=http://127.0.0.1:11434/v1 STB_LLM_MODEL=ministral-3:8b`.
 
 **JSON API for clients (be-better):** `GET /api/htmsw/framework`, `POST /api/htmsw/judge`,
-`POST /api/htmsw/debrief`, `GET /api/htmsw/progress` (`web/routes/htmsw_api.py`). Results
+`POST /api/htmsw/debrief`, `GET /api/htmsw/progress`, `POST|GET /api/htmsw/feedback`
+(`web/routes/htmsw_api.py`). Judge and debrief replies carry `outcome_ids` to send back
+with feedback. Tester feedback (`record/feedback.py`: right/wrong per step, useful
+yes/somewhat/no, fixed issue codes) is integers in both profiles; the free-text comment
+is kept only under `full`. It shows on `/htmsw/progress`. Results
 record under the engine's privacy profile; clients cannot widen it. No auth, like the rest
 of the UI: for the MacBook Air, serve on Tailscale only, e.g.
 `stb serve --host 100.103.52.82`. `stb export-framework` writes the framework JSON that

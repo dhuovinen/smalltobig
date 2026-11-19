@@ -23,6 +23,7 @@ from smalltobig.framework.export import export
 from smalltobig.llm.openai_compat import OpenAICompatClient
 from smalltobig.models.session import Turn
 from smalltobig.practice import htmsw_debrief, htmsw_judge
+from smalltobig.record import feedback as record_feedback
 from smalltobig.record import service
 from smalltobig.record.models import SessionRecord
 
@@ -49,6 +50,21 @@ class DebriefRequest(BaseModel):
     domain_id: str
     consent: Literal["obtained", "not_required_here", "own_side_only"] = "own_side_only"
     record: bool = True
+
+
+class StepFeedback(BaseModel):
+    outcome_id: int
+    agrees: bool
+
+
+class FeedbackRequest(BaseModel):
+    kind: Literal["rehearsal", "real", "prep"]
+    domain_id: str
+    useful: Literal["yes", "somewhat", "no"]
+    outcome_ids: list[int] = Field(default_factory=list, max_length=8)
+    steps: list[StepFeedback] = Field(default_factory=list, max_length=8)
+    issues: list[str] = Field(default_factory=list, max_length=len(record_feedback.ISSUES))
+    note: str = Field(default="", max_length=record_feedback.MAX_NOTE_CHARS)
 
 
 def _fw(request: Request) -> Framework:
@@ -97,8 +113,9 @@ def judge(request: Request, body: JudgeRequest) -> dict[str, object] | JSONRespo
             verdicts, messages, reply = htmsw_judge.judge_detailed(client, fw, body.turns)
     except httpx.HTTPError as exc:
         return _model_unavailable(exc)
+    outcome_ids: list[int] = []
     if body.record:
-        service.save(settings, fw, SessionRecord(
+        outcome_ids = service.save_with_ids(settings, fw, SessionRecord(
             source="rehearsal", domain_id=body.domain_id, created_at=datetime.now(UTC),
             verdicts=tuple(verdicts), cluster_id=service.current_cluster(settings, fw),
             partner_id=body.partner_id or body.client, turns=tuple(body.turns),
@@ -107,6 +124,7 @@ def judge(request: Request, body: JudgeRequest) -> dict[str, object] | JSONRespo
     return {
         "verdicts": _verdicts_json(verdicts),
         "recorded": body.record,
+        "outcome_ids": outcome_ids,  # pass back to POST /feedback, in verdict order
         "privacy_profile": settings.privacy_profile,
         "framework_revision": export(fw)["revision"],
     }
@@ -121,8 +139,9 @@ def debrief(request: Request, body: DebriefRequest) -> dict[str, object] | JSONR
             verdicts, messages, reply = htmsw_debrief.extract(client, fw, body.account)
     except httpx.HTTPError as exc:
         return _model_unavailable(exc)
+    outcome_ids: list[int] = []
     if body.record:
-        service.save(settings, fw, SessionRecord(
+        outcome_ids = service.save_with_ids(settings, fw, SessionRecord(
             source="real", domain_id=body.domain_id, created_at=datetime.now(UTC),
             verdicts=tuple(verdicts), cluster_id=service.current_cluster(settings, fw),
             account=body.account.strip(), consent=body.consent,
@@ -131,6 +150,7 @@ def debrief(request: Request, body: DebriefRequest) -> dict[str, object] | JSONR
     return {
         "verdicts": _verdicts_json(verdicts),
         "recorded": body.record,
+        "outcome_ids": outcome_ids,  # pass back to POST /feedback, in verdict order
         "privacy_profile": settings.privacy_profile,
     }
 
@@ -144,4 +164,48 @@ def progress(request: Request) -> dict[str, object]:
         "real_weight": fw.progress.real_weight,
         "outcomes": len(outcomes),
         "counters": [c.model_dump() for c in table],
+    }
+
+
+@router.post("/feedback")
+def feedback(request: Request, body: FeedbackRequest) -> dict[str, object]:
+    """Tester feedback on a judged session or a prep card (record/feedback.py).
+
+    `outcome_ids` come from the judge or debrief response. The note is kept only
+    under the engine's `full` profile; under `abstracted` it is dropped.
+    """
+    fw, settings = _fw(request), _settings(request)
+    _check_domain(fw, body.domain_id)
+    submission = record_feedback.Submission(
+        kind=body.kind, domain_id=body.domain_id, useful=body.useful,
+        outcome_ids=tuple(body.outcome_ids),
+        agrees=tuple((s.outcome_id, s.agrees) for s in body.steps),
+        issues=tuple(body.issues), note=body.note,
+    )
+    try:
+        service.record_feedback_submission(
+            settings, fw, submission, int(datetime.now(UTC).timestamp()))
+    except record_feedback.FeedbackError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {
+        "recorded": True,
+        "note_kept": settings.privacy_profile == "full" and bool(body.note.strip()),
+        "privacy_profile": settings.privacy_profile,
+    }
+
+
+@router.get("/feedback")
+def feedback_summary(request: Request) -> dict[str, object]:
+    """Agreement per step and source, usefulness and issue counts. Never the notes."""
+    settings = _settings(request)
+    summary, _ = service.feedback_summary(settings)
+    return {
+        "privacy_profile": settings.privacy_profile,
+        "issues": [{"id": i.id, "label": i.label, "kinds": list(i.kinds)}
+                   for i in record_feedback.ISSUES],
+        "sessions": summary.sessions if summary else 0,
+        "agreement": [vars(a) for a in summary.agreement] if summary else [],
+        "useful": summary.useful if summary else {},
+        "issue_counts": [{"kind": k, "label": label, "count": n}
+                         for k, label, n in summary.issues] if summary else [],
     }

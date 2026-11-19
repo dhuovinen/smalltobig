@@ -5,9 +5,12 @@ One SQLite file per privacy profile, `settings.record_db_path`:
 - Both profiles: `step_outcomes`, integers only (FR-51; tests/test_privacy.py
   asserts no TEXT column), plus `domain_refs`, which maps framework domain ids to
   integers. That is reference data from domains.yaml, never user text.
+- Both profiles: tester feedback (`step_feedback`, `session_feedback`,
+  `session_feedback_issues`), integers only. See record/feedback.py.
 - `full` only: `sessions` and `verdicts`, which keep the transcript, debrief prose,
-  consent, quotes and the model's request and reply. These tables are not even
-  created in an `abstracted` store.
+  consent, quotes and the model's request and reply, and `feedback_notes`, the
+  tester's free-text comment. These tables are not even created in an `abstracted`
+  store.
 
 The file is created owner-only (0600). A `full` store is the most sensitive file the
 app produces (DECISIONS #24) and lives under data_dir, outside the repository.
@@ -46,6 +49,25 @@ CREATE TABLE IF NOT EXISTS step_outcomes (
     source INTEGER NOT NULL CHECK (source IN (1, 2)),
     passed INTEGER NOT NULL CHECK (passed IN (0, 1))
 );
+-- Tester feedback (record/feedback.py). Integers only, like step_outcomes.
+CREATE TABLE IF NOT EXISTS step_feedback (
+    outcome_id INTEGER PRIMARY KEY REFERENCES step_outcomes(id) ON DELETE CASCADE,
+    at INTEGER NOT NULL,
+    agrees INTEGER NOT NULL CHECK (agrees IN (0, 1))
+);
+CREATE TABLE IF NOT EXISTS session_feedback (
+    id INTEGER PRIMARY KEY,
+    at INTEGER NOT NULL,
+    kind INTEGER NOT NULL CHECK (kind IN (1, 2, 3)),
+    domain_ref INTEGER NOT NULL REFERENCES domain_refs(ref),
+    first_outcome_id INTEGER UNIQUE REFERENCES step_outcomes(id) ON DELETE CASCADE,
+    useful INTEGER NOT NULL CHECK (useful IN (1, 2, 3))
+);
+CREATE TABLE IF NOT EXISTS session_feedback_issues (
+    feedback_id INTEGER NOT NULL REFERENCES session_feedback(id) ON DELETE CASCADE,
+    issue INTEGER NOT NULL,
+    PRIMARY KEY (feedback_id, issue)
+);
 CREATE TABLE IF NOT EXISTS store_meta (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     profile_code INTEGER NOT NULL CHECK (profile_code IN (1, 2))
@@ -74,6 +96,10 @@ CREATE TABLE IF NOT EXISTS verdicts (
     quote TEXT,
     partner_quote TEXT,
     reason TEXT
+);
+CREATE TABLE IF NOT EXISTS feedback_notes (
+    feedback_id INTEGER PRIMARY KEY REFERENCES session_feedback(id) ON DELETE CASCADE,
+    note TEXT NOT NULL
 );
 """
 
@@ -110,7 +136,7 @@ def connect(path: Path, profile: Profile) -> sqlite3.Connection:
     return conn
 
 
-def _domain_ref(conn: sqlite3.Connection, slug: str) -> int:
+def domain_ref(conn: sqlite3.Connection, slug: str) -> int:
     conn.execute("INSERT OR IGNORE INTO domain_refs (slug) VALUES (?)", (slug,))
     row = conn.execute("SELECT ref FROM domain_refs WHERE slug = ?", (slug,)).fetchone()
     return int(row[0])
@@ -120,15 +146,24 @@ def write(
     conn: sqlite3.Connection, fw: Framework, record: SessionRecord, profile: Profile
 ) -> list[Outcome]:
     """Store a session. Under `abstracted`, only `project(record)` reaches disk."""
+    return [o for _, o in write_with_ids(conn, fw, record, profile)]
+
+
+def write_with_ids(
+    conn: sqlite3.Connection, fw: Framework, record: SessionRecord, profile: Profile
+) -> list[tuple[int, Outcome]]:
+    """`write`, returning each outcome's row id so feedback can refer to it."""
     outcomes = project(fw, record)
+    stored: list[tuple[int, Outcome]] = []
     with conn:
         for o in outcomes:
-            conn.execute(
+            cur = conn.execute(
                 "INSERT INTO step_outcomes (at, step_order, domain_ref, source, passed) "
                 "VALUES (?, ?, ?, ?, ?)",
-                (o.at, o.step_order, _domain_ref(conn, o.domain_id),
+                (o.at, o.step_order, domain_ref(conn, o.domain_id),
                  SOURCE_CODES[o.source], int(o.passed)),
             )
+            stored.append((int(cur.lastrowid or 0), o))
         if profile == "full":
             cur = conn.execute(
                 "INSERT INTO sessions (created_at, source, domain_id, cluster_id, partner_id, "
@@ -149,7 +184,7 @@ def write(
                     (cur.lastrowid, v.step_id, v.rubric_id, int(v.passed), v.quote,
                      v.partner_quote, v.reason),
                 )
-    return outcomes
+    return stored
 
 
 def outcomes(conn: sqlite3.Connection) -> list[Outcome]:

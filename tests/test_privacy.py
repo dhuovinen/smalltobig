@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 import sqlite3
 import stat
 from datetime import UTC, datetime
@@ -95,11 +96,29 @@ def _run_every_flow(client: TestClient) -> None:
         "turns_json": _hidden(page, "turns_json"),
     })
     assert end.status_code == 200
+    _send_feedback(client, end.text, "rehearsal", "cold_networking")
     debrief = client.post("/htmsw/debrief", data={
         "domain_id": "giving_back", "account": f"I told her {SENTINEL} and asked about it.",
         "consent": "obtained",
     })
     assert debrief.status_code == 200
+    _send_feedback(client, debrief.text, "real", "giving_back")
+    prep = client.post("/htmsw/feedback", data={
+        "kind": "prep", "domain_id": "cold_networking", "useful": "somewhat",
+        "issue": "phrasings_unnatural", "note": SENTINEL,
+    }, follow_redirects=False)
+    assert prep.status_code == 303
+
+
+def _send_feedback(client: TestClient, page: str, kind: str, domain_id: str) -> None:
+    """Tester feedback with a free-text note; only `full` may keep the note."""
+    ids = re.findall(r'name="outcome_id" value="(\d+)"', page)
+    assert ids, "result page should carry the session's outcome ids"
+    r = client.post("/htmsw/feedback", data={
+        "kind": kind, "domain_id": domain_id, "useful": "yes", "outcome_id": ids,
+        f"agree_{ids[0]}": "no", "issue": "other", "note": SENTINEL,
+    }, follow_redirects=False)
+    assert r.status_code == 303, r.text
 
 
 def _cells_containing(data_dir: Path, needle: str) -> list[tuple[str, str]]:
@@ -143,7 +162,7 @@ def test_full_profile_keeps_everything_in_its_own_store(tmp_path: Path, patch_mo
     _run_every_flow(TestClient(create_app(settings)))
     hits = {table for name, table in _cells_containing(settings.data_dir, SENTINEL)
             if name == settings.record_db_path.name}
-    assert {"sessions", "verdicts"} <= hits
+    assert {"sessions", "verdicts", "feedback_notes"} <= hits
     # Nothing leaks into the shared smalltobig.db, even under full.
     shared = [h for h in _cells_containing(settings.data_dir, SENTINEL)
               if h[0] != settings.record_db_path.name]
@@ -161,10 +180,15 @@ def test_full_profile_keeps_everything_in_its_own_store(tmp_path: Path, patch_mo
 
 
 @pytest.mark.parametrize("profile", ["abstracted", "full"])
-def test_outcome_table_has_no_text_column(tmp_path: Path, profile: str) -> None:
+@pytest.mark.parametrize(
+    "table", ["step_outcomes", "step_feedback", "session_feedback", "session_feedback_issues"]
+)
+def test_outcome_and_feedback_tables_have_no_text_column(
+    tmp_path: Path, profile: str, table: str
+) -> None:
     conn = record_store.connect(tmp_path / "s.db", profile)  # type: ignore[arg-type]
     try:
-        types = {r[1]: r[2].upper() for r in conn.execute("PRAGMA table_info(step_outcomes)")}
+        types = {r[1]: r[2].upper() for r in conn.execute(f"PRAGMA table_info({table})")}
     finally:
         conn.close()
     assert types and "TEXT" not in types.values(), types
@@ -176,7 +200,7 @@ def test_abstracted_store_has_no_prose_tables(tmp_path: Path) -> None:
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     finally:
         conn.close()
-    assert not {"sessions", "verdicts"} & tables
+    assert not {"sessions", "verdicts", "feedback_notes"} & tables
 
 
 @pytest.mark.parametrize("profile", ["abstracted", "full"])
