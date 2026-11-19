@@ -70,7 +70,7 @@ def check_embeddings(
 
 
 def run_doctor(settings: Settings) -> list[CheckResult]:
-    with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+    with OpenAICompatClient(settings.llm_base_url, **settings.llm_options()) as client:
         results = [check_llm_health(client), check_llm_generation(client)]
     results.append(check_embeddings(settings.embedding_model))
     return results

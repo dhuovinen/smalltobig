@@ -32,7 +32,7 @@ def new_drill(request: Request, settings: SettingsDep, conn: DbDep, rule_id: str
     if rule is None:
         raise HTTPException(status_code=404, detail="rule not found")
 
-    with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+    with OpenAICompatClient(settings.llm_base_url, **settings.llm_options()) as client:
         stimulus = generate_stimulus(client, rule)
 
     return templates.TemplateResponse(
@@ -53,7 +53,7 @@ def submit_drill(
     if rule is None:
         raise HTTPException(status_code=404, detail="rule not found")
 
-    with OpenAICompatClient(settings.llm_base_url, model=settings.llm_model) as client:
+    with OpenAICompatClient(settings.llm_base_url, **settings.llm_options()) as client:
         drill = score_drill(conn, client, rule_id, stimulus, response)
 
     checks_by_id = {item.id: item.check for item in rule.rubric}

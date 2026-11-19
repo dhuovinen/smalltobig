@@ -62,7 +62,7 @@ def _settings(request: Request) -> Settings:
 
 
 def _client(settings: Settings) -> OpenAICompatClient:
-    return OpenAICompatClient(settings.llm_base_url, model=settings.llm_model)
+    return OpenAICompatClient(settings.llm_base_url, **settings.llm_options())
 
 
 def _check_domain(fw: Framework, domain_id: str) -> None:

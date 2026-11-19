@@ -17,7 +17,7 @@ HEALTH_TIMEOUT_SECONDS = 2.0
 @router.get("/status/model")
 def model_status(request: Request, settings: SettingsDep) -> Response:
     with OpenAICompatClient(
-        settings.llm_base_url, model=settings.llm_model, timeout=HEALTH_TIMEOUT_SECONDS
+        settings.llm_base_url, **settings.llm_options(timeout=HEALTH_TIMEOUT_SECONDS)
     ) as client:
         online = client.health()
     return templates.TemplateResponse(

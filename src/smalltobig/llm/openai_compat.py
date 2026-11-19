@@ -1,7 +1,9 @@
 """LlmClient backed by any OpenAI-compatible chat endpoint.
 
 Targets mlx_lm.server by default, but the same client works against Ollama
-(`:11434/v1`) or LM Studio (`:1234/v1`) — just point `STB_LLM_BASE_URL` at it.
+(`:11434/v1`), LM Studio (`:1234/v1`) or omlx-serve — point `STB_LLM_BASE_URL` at
+it, and set `STB_LLM_API_KEY` if the server requires a key. Build it from
+`settings.llm_options()` so every call site gets the same configuration.
 """
 
 from __future__ import annotations
@@ -15,10 +17,19 @@ if TYPE_CHECKING:
 
 
 class OpenAICompatClient:
-    def __init__(self, base_url: str, model: str = "", timeout: float = 30.0) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        model: str = "",
+        timeout: float = 30.0,
+        api_key: str = "",
+        enable_thinking: bool | None = None,
+    ) -> None:
         self._base_url = base_url.rstrip("/")
         self._model = model
-        self._client = httpx.Client(timeout=timeout)
+        self._enable_thinking = enable_thinking
+        headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+        self._client = httpx.Client(timeout=timeout, headers=headers)
 
     def health(self) -> bool:
         # mlx_lm.server exposes /health on the server root, not under /v1. Ollama
@@ -46,6 +57,10 @@ class OpenAICompatClient:
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
+        if self._enable_thinking is not None:
+            # Understood by Qwen-family chat templates (mlx, omlx, llama.cpp, vLLM);
+            # servers that don't support it ignore the field.
+            payload["chat_template_kwargs"] = {"enable_thinking": self._enable_thinking}
         if self._model:
             # mlx_lm.server treats a present "model" as a repo id to load,
             # rather than a label — omit it to mean "whatever's running".
@@ -53,8 +68,9 @@ class OpenAICompatClient:
         response = self._client.post(f"{self._base_url}/chat/completions", json=payload)
         response.raise_for_status()
         data = response.json()
-        content = data["choices"][0]["message"]["content"]
-        return str(content)
+        content = data["choices"][0]["message"].get("content")
+        # A thinking model can answer with content null; never return the string "None".
+        return "" if content is None else str(content)
 
     def close(self) -> None:
         self._client.close()
