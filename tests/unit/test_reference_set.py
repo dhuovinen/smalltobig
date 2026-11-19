@@ -92,13 +92,13 @@ def test_runner_counts_agreement_and_error_direction(
 
 # ----------------------------------------------------------------------------- live
 
-# Baseline from the first live run (DECISIONS #28). A judge, prompt or model change
-# must not take any step below these. Raise them when a change improves a step.
-# Qwen-AgentWorld-35B-A3B-oQ4, thinking off, 2026-11-19: the lowest score per step
-# over five runs. Rehearsal steps 2 and 3 vary by one case between runs.
+# Baseline (DECISIONS #28, raised in #29). A judge, prompt or model change must not
+# take any step below these; raise them when a change improves a step. Lowest score
+# per step over five runs on Qwen-AgentWorld-35B-A3B-oQ4, thinking off, 2026-11-19,
+# after the step 3 and step 4 rewording. Every run agreed on all 16 cases.
 BASELINE = {
-    "rehearsal": {1: 10, 2: 9, 3: 8, 4: 9},
-    "debrief": {1: 6, 2: 6, 3: 6, 4: 4},
+    "rehearsal": {1: 10, 2: 10, 3: 10, 4: 10},
+    "debrief": {1: 6, 2: 6, 3: 6, 4: 6},
 }
 
 

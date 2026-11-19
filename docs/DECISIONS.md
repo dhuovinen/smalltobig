@@ -866,3 +866,39 @@ specific no-strings offer") is the obvious fix. It is a framework change, so it 
 its own commit and must clear this baseline. The trial in FOCUS.md should not start
 until that decision is made: real debriefs are where step 4 is judged most, and a
 judge that never credits an offer would make the trial's step-4 numbers meaningless.
+
+---
+
+### 29. Step 3 and step 4 checks reworded; reference set now 16/16
+
+**Change (2026-11-19):** the `ask_was_earned` and `connected_not_reset` checks in
+`framework/htmsw.yaml` were reworded to fix the #28 findings. REQUIREMENTS.md FR
+tables keep the short forms; the YAML is the source of truth, as in #25.
+
+- **Step 4** now names both kinds of move: "a direct ask or a specific, no-strings
+  offer", after two rounds of reciprocal exchange "in which both people shared
+  something personal". It says that an ask after a pitch, a change of topic or no
+  real exchange is not earned, and that making neither an ask nor an offer fails.
+- **Step 3** now spells out "no larger": a personal share on the theme the partner
+  raised, of similar weight. A brag, a credential, an unrelated topic or something
+  much heavier does not pass.
+
+**How it got there.** The first step-4 rewording (offers named, "reciprocal" left
+implicit) credited both offers but let three cold asks pass: 8/10 and 5/6. It also
+pushed step 3 to 7/10, below its floor, though step 3's text had not changed. All
+four checks go to the judge in one prompt, so rewording one shifts how the model
+reads the others. The "earned" wording fixed step 4. Rewording step 3 fixed the
+three step-3 false passes.
+
+**Result:** 10/10 on every rehearsal step and 6/6 on every debrief step, identical
+across five runs. The `mlx` test floor is raised to that.
+
+**Caveat: tuned on the cases that measure it.** Both wordings were written while
+looking at these 16 cases, so 16/16 overstates how well the judge will do on new
+conversations. The trial's per-step "was the judge right?" feedback is the real
+held-out test. Add new cases from real disagreements as they come in, without
+relabelling old ones, and expect the floor to come down.
+
+**Knock-on:** the framework export's revision hash changes. be-better reads the
+framework from the engine when connected; its bundled snapshot is stale until
+`stb export-framework` (via its `scripts/update-htmsw-framework.sh`) is re-run.
