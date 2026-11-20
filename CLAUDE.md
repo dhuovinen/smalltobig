@@ -121,7 +121,8 @@ stb seed        # load docs/seed's starter rules + disagreements as UNVERIFIED
 stb serve       # web UI at http://127.0.0.1:8028 — sources, claims review,
                 # rules (accept/reject/supersede), conflicts (resolve),
                 # lessons, drills, roleplay, sessions, prep/debrief, field
-                # notes, and a mastery dashboard. --host 0.0.0.0 for LAN.
+                # notes, and a mastery dashboard. --host 0.0.0.0 (or
+                # STB_HOST=0.0.0.0 in .env) for LAN; no login, trusted network only.
                 # HTMSW intake + prep card: /htmsw/profile, /htmsw/prep/new
 stb profile set has_kids=yes kids_stage=teen caregiving=no primary_focus=family
 stb profile show   # stored flags and the cluster they classify to

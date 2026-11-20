@@ -161,3 +161,32 @@ def test_lessons_reports_the_summary(tmp_path: Path, monkeypatch: pytest.MonkeyP
     assert result.exit_code == 0
     assert "5 accepted rule(s), 2 already in a lesson" in result.output
     assert "1 lesson(s) created" in result.output
+
+
+@pytest.mark.parametrize(
+    ("env_host", "flag", "expected"),
+    [
+        (None, [], "127.0.0.1"),  # default: this machine only
+        ("0.0.0.0", [], "0.0.0.0"),  # STB_HOST from .env or the environment
+        ("0.0.0.0", ["--host", "127.0.0.1"], "127.0.0.1"),  # the flag wins
+    ],
+)
+def test_serve_binds_to_stb_host_unless_overridden(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    env_host: str | None, flag: list[str], expected: str,
+) -> None:
+    import uvicorn
+
+    seen: dict[str, object] = {}
+    monkeypatch.setattr(uvicorn, "run", lambda app, host, port: seen.update(host=host, port=port))
+    monkeypatch.setenv("STB_DATA_DIR", str(tmp_path / "data"))
+    if env_host:
+        monkeypatch.setenv("STB_HOST", env_host)
+    else:
+        monkeypatch.delenv("STB_HOST", raising=False)
+    monkeypatch.delenv("STB_PORT", raising=False)
+    result = CliRunner().invoke(cli.main, ["serve", *flag])
+    assert result.exit_code == 0, result.output
+    assert seen == {"host": expected, "port": 8028}
+    assert "/htmsw/prep/new" in result.output
+    assert ("No login" in result.output) == (expected != "127.0.0.1")

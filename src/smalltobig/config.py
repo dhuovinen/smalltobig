@@ -31,8 +31,10 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # Web UI. See docs/DECISIONS.md #1.
+    # Web UI. See docs/DECISIONS.md #1. The UI has no login: 127.0.0.1 keeps it on
+    # this machine; 0.0.0.0 (or a LAN/Tailscale address) is for a trusted network only.
     port: int = 8028
+    host: str = "127.0.0.1"
 
     # Chat, over an OpenAI-compatible HTTP endpoint. Pinned off mlx_lm.server's
     # default of 8000 — see docs/DECISIONS.md #2.
