@@ -131,6 +131,9 @@ stb rehearse --partner sarah [--domain giving_back]   # /end to finish and score
 stb debrief --domain cold_networking < account.txt   # or type it, then Ctrl-D
 stb progress    # per step x domain; real conversations count 3x
 stb purge       # active profile's HTMSW store + self-profile (FR-55)
+stb reference-check   # judge + debrief vs evals/htmsw_reference.yaml; needs the model.
+                # Run before/after any judge, prompt, htmsw.yaml or model change and
+                # compare with the baseline in DECISIONS #28 (enforced by the mlx test)
                 # Rehearse and debrief need the model server and record under
                 # STB_PRIVACY_PROFILE (abstracted: integer outcomes only; full: everything).
                 # Web: /htmsw/{rehearse,debrief,progress,purge}
@@ -161,6 +164,10 @@ record under the engine's privacy profile; clients cannot widen it. No auth, lik
 of the UI: for the MacBook Air, serve on Tailscale only, e.g.
 `stb serve --host 100.103.52.82`. `stb export-framework` writes the framework JSON that
 be-better bundles (its `scripts/update-htmsw-framework.sh` calls it).
+
+**Focus trial (docs/FOCUS.md):** `scripts/serve-tester.sh NAME PORT [abstracted|full]`
+serves one tester from `~/SmallToBig/testers/NAME` on the Tailscale address; testers
+get `docs/TESTER_GUIDE.md`.
 
 `.claude/launch.json` has `stb-web` (port 8028, real data) and `stb-web-demo`
 (port 8029, throwaway data in /tmp/smalltobig-demo) for previews.

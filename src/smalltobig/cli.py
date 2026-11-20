@@ -463,6 +463,48 @@ def debrief(domain_id: str, consent: str, account_file: TextIO) -> None:
     click.echo(f"\n{_saved_note(settings.privacy_profile)}")
 
 
+@main.command("reference-check")
+@click.option(
+    "--file", "path", type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    default=None, help="Reference set YAML. Defaults to evals/htmsw_reference.yaml.",
+)
+def reference_check(path: Path | None) -> None:
+    """Run the HTMSW judge reference set against the model server and report agreement.
+
+    Every labelled rehearsal goes through the judge and every account through the
+    debrief extractor, exactly as in the app. Nothing is recorded. Compare the result
+    with the baseline in DECISIONS.md before shipping a judge, prompt or model change.
+    """
+    from smalltobig.llm.openai_compat import OpenAICompatClient
+    from smalltobig.practice import reference_set
+
+    fw = _framework_or_exit()
+    refset = reference_set.load(path or reference_set.DEFAULT_PATH)
+    settings = get_settings()
+    click.echo(
+        f"Model {settings.llm_model} at {settings.llm_base_url} · "
+        f"{len(refset.rehearsals)} rehearsals, {len(refset.debriefs)} debriefs"
+    )
+    with OpenAICompatClient(settings.llm_base_url, **settings.llm_options()) as client:
+        report = reference_set.run(client, fw, refset)
+    steps = sorted(fw.steps, key=lambda s: s.order)
+    for kind in ("rehearsal", "debrief"):
+        click.echo(f"\n{kind.capitalize() + 's':<33}agreed   wrong yes   wrong not yet")
+        for step in steps:
+            agreed, total = report.agreement(kind, step.order)
+            wrong_yes, wrong_no = report.errors(kind, step.order)
+            click.echo(f"  {step.order}. {step.name:<28}{agreed:>2}/{total:<5}"
+                       f"{wrong_yes:>6}{wrong_no:>14}")
+    misses = [r for r in report.results if r.mismatches]
+    click.echo(f"\n{len(misses)} of {len(report.results)} cases with a disagreement")
+    for r in misses:
+        for order in r.mismatches:
+            got = "yes" if r.got[order - 1] else "not yet"
+            reason = r.reasons[order - 1]
+            click.echo(f"  {r.case_id}, step {order}: model said {got}"
+                       + (f" ({reason})" if reason else ""))
+
+
 @main.command("progress")
 def progress_cmd() -> None:
     """Show HTMSW progress per step and kind of conversation."""

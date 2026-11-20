@@ -113,12 +113,23 @@ rubric:
     needs_partner_quote: true
   - id: connected_not_reset
     step: step_3
+    # DECISIONS #29: the short form passed brags and far heavier shares.
     check: >-
       Was their second disclosure connected to the partner's, and no larger than it?
+      It must be a personal share on the same theme the partner just raised, of
+      similar weight. A brag or achievement, a credential, an unrelated topic, or
+      something much heavier or more private than what the partner shared does not
+      pass.
     needs_partner_quote: true
   - id: ask_was_earned
     step: step_4
-    check: Did the ask come after at least two rounds of reciprocal exchange?
+    # DECISIONS #29: "the ask" alone led the debrief judge to miss every offer.
+    check: >-
+      Was the ask earned? It passes only if the user made a direct ask or a specific,
+      no-strings offer (for example to check in later or send a recommendation) AFTER
+      at least two rounds of reciprocal exchange in which both people shared something
+      personal. An ask that follows a pitch, a change of topic or no real exchange is
+      not earned. If the user made neither an ask nor an offer, it did not pass.
     min_prior_exchanges: 2
 
 # REQUIREMENTS.md §2.3: applies across all domains when the user knows little or

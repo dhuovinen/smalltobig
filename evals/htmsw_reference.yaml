@@ -1,0 +1,199 @@
+# HTMSW judge reference set (docs/FOCUS.md, Step 0).
+#
+# Hand-labelled conversations with the verdict a careful human gives for each of the
+# four steps. `stb reference-check` runs the live judge and debrief extractor over
+# them and reports agreement per step. Run it before and after any change to the
+# judge, the debrief prompt, htmsw.yaml or the model; a change ships only if no step
+# drops below the baseline recorded in DECISIONS.md.
+#
+# Labels follow the rubric in framework/htmsw.yaml, including its structural checks:
+# step 1 fails if the user asked something substantive first; step 4 needs at least
+# two prior exchanges and fails when no ask or offer was made at all.
+#
+# Fictional content only: no real people, no copyrighted text. Add cases freely,
+# never relabel one to make a run pass. If a label is wrong, fix it in its own commit
+# and say why in `note`.
+
+version: 1
+
+rehearsals:
+  # Sarah, cold_networking. Each starts with her fixed opening line.
+  - id: good_full
+    note: All four steps, offer comes after three exchanges.
+    expected: [true, true, true, true]
+    turns:
+      - partner: Hi, I don't think we've met. Is this your first time at one of these?
+      - user: It is. Honestly I almost talked myself out of coming, I'm not great at walking up to strangers.
+      - partner: Ha, same. I nearly skipped tonight after a long week. I keep telling myself I'll get back into running instead of doing things like this.
+      - user: What keeps getting in the way of the running?
+      - partner: I never protect the time. It's always the first thing that falls off my calendar.
+      - user: I know that one. I started swimming again this spring and only kept it up once I booked it like a meeting.
+      - partner: That's smart. I should try that.
+      - user: If it helps, I'm happy to check in with you next week and see if you got a run in. No strings.
+
+  - id: pitch_pivot_cold_ask
+    note: DECISIONS #25 BAD script. Credentials as disclosure, topic pivot, cold ask.
+    expected: [false, false, false, false]
+    turns:
+      - partner: Hi, I don't think we've met. Is this your first time at one of these?
+      - user: Yes! I'm a consultant, I help startups scale their operations. Here's my card.
+      - partner: Oh, thanks. I run operations at a logistics startup, actually.
+      - user: Did you catch the game last night?
+      - partner: I didn't, no.
+      - user: Could you introduce me to your CEO? I think we could really help.
+
+  - id: question_before_disclosure
+    note: Opens with a substantive question, so step 1 fails structurally; the later question does build on her line.
+    expected: [false, true, false, false]
+    turns:
+      - partner: Hi, I don't think we've met. Is this your first time at one of these?
+      - user: What do you do for work?
+      - partner: I run operations for a logistics startup downtown. It's chaotic, but I like it.
+      - user: Honestly I find these events exhausting, I almost didn't come.
+      - partner: Same, I nearly skipped tonight myself.
+      - user: What made you come anyway?
+      - partner: I figured I should meet someone outside work for once.
+
+  - id: generic_questions
+    note: Good disclosure, then interview questions that ignore what she said.
+    expected: [true, false, false, false]
+    turns:
+      - partner: Hi, I don't think we've met. Is this your first time at one of these?
+      - user: It is. I'm a bit nervous, I don't know anyone here.
+      - partner: Don't worry, me neither really. I moved here from Chicago a couple of years ago.
+      - user: So what do you do for work?
+      - partner: Operations for a logistics startup.
+      - user: Cool. Do you like the food here?
+      - partner: It's fine.
+
+  - id: oversized_connect
+    note: Steps 1 and 2 fine; the second disclosure is far larger than hers.
+    expected: [true, true, false, false]
+    turns:
+      - partner: Hi, I don't think we've met. Is this your first time at one of these?
+      - user: It is. I nearly didn't come, honestly, it's been a long week.
+      - partner: Same here. I keep meaning to get back into running and I'm doing this instead.
+      - user: What's stopping you from getting back into it?
+      - partner: Mostly just time. It slips off my calendar.
+      - user: I get it. Last year my marriage fell apart and I stopped exercising completely, and I've been in therapy for the depression ever since.
+      - partner: Oh. I'm sorry to hear that.
+
+  - id: good_no_ask
+    note: Three steps done well, but no ask or offer, so step 4 is not yet.
+    expected: [true, true, true, false]
+    turns:
+      - partner: Hi, I don't think we've met. Is this your first time at one of these?
+      - user: It is. Honestly I almost talked myself out of coming, I'm not great at walking up to strangers.
+      - partner: Ha, same. I nearly skipped tonight after a long week. I keep telling myself I'll get back into running instead of doing things like this.
+      - user: What keeps getting in the way of the running?
+      - partner: I never protect the time. It's always the first thing that falls off my calendar.
+      - user: I know that one. I started swimming again this spring and only kept it up once I booked it like a meeting.
+      - partner: That's smart. I should try that.
+
+  - id: early_ask
+    note: Honest disclosure, then an ask after only one exchange.
+    expected: [true, false, false, false]
+    turns:
+      - partner: Hi, I don't think we've met. Is this your first time at one of these?
+      - user: It is. I'm a little out of my depth at these, to be honest.
+      - partner: Ha, aren't we all. I nearly skipped it.
+      - user: Would you be up for grabbing coffee next week so I can pick your brain about your company?
+      - partner: Maybe, sure.
+
+  - id: credentials_then_brag
+    note: Credentials instead of disclosure; a real build-on; then a brag that outsizes her.
+    expected: [false, true, false, false]
+    turns:
+      - partner: Hi, I don't think we've met. Is this your first time at one of these?
+      - user: Not at all, I've been to dozens. I'm a VP at a fintech and I sit on two boards.
+      - partner: Wow. I run ops at a small logistics startup, nothing that fancy. I almost skipped tonight.
+      - user: Why did you almost skip it?
+      - partner: Long week. And I keep promising myself I'll go running instead.
+      - user: Running is great. I ran a marathon last year in under three hours.
+      - partner: That's impressive.
+
+  - id: good_start_then_pivot
+    note: Good disclosure, then a pivot to sport and a cold job ask.
+    expected: [true, false, false, false]
+    turns:
+      - partner: Hi, I don't think we've met. Is this your first time at one of these?
+      - user: It is, and I'll admit I'm a bit awkward at these.
+      - partner: You're doing fine. I'm only here because my running group cancelled.
+      - user: Did you see the football on Sunday?
+      - partner: I didn't, sorry.
+      - user: Anyway, do you know anyone hiring for product roles?
+      - partner: Not off the top of my head.
+
+  - id: good_full_different_words
+    note: All four steps with different content; the offer is a concrete, no-pressure one.
+    expected: [true, true, true, true]
+    turns:
+      - partner: Hi, I don't think we've met. Is this your first time at one of these?
+      - user: Second time, but I still feel like the new kid. I moved here last year and I'm still figuring out how people meet.
+      - partner: Oh, I know that feeling. I came from Chicago two years ago and I still barely know anyone outside work.
+      - user: What's been the hardest part of building a life outside work here?
+      - partner: Honestly, protecting any time for myself. I wanted to get back into running and it never happens.
+      - user: That's where I was with cycling. I only got back to it when I found a Saturday group that expected me to show up.
+      - partner: That's the trick, isn't it. Someone expecting you.
+      - user: There's a beginner-friendly running club that meets near me on Saturdays. Want me to send you the details?
+
+debriefs:
+  # Written accounts of real conversations, scored by the debrief extractor.
+  - id: debrief_good_full
+    note: All four steps. Step 4 uses the wording the judge missed in DECISIONS #27.
+    expected: [true, true, true, true]
+    account: >-
+      At the neighbourhood association mixer I told a woman called Priya that I'd
+      almost stayed home because I find these events draining. She laughed and said she
+      only came because her book club fell through. I asked what they had been reading
+      that made everyone bail, and she said they had stalled on a 900-page novel. I said
+      I have a stack of half-read books on my nightstand too. We went back and forth
+      about books for a while, and before I left I offered to check in with her next
+      week, no strings, to see if the club got going again.
+
+  - id: debrief_pitch
+    note: Elevator pitch, card, cold ask for an introduction.
+    expected: [false, false, false, false]
+    account: >-
+      I went to the chamber breakfast and introduced myself to a man called Tom with my
+      elevator pitch about my consulting firm. I gave him my card and asked if he could
+      introduce me to his CFO. He said he would think about it.
+
+  - id: debrief_no_ask
+    note: Three steps clearly described; the account says no offer was made.
+    expected: [true, true, true, false]
+    account: >-
+      At my daughter's school fundraiser I admitted to another parent, Dana, that I
+      never know what to say at these things. She said she felt the same and had only
+      come because her son was performing. I asked what he was performing, and she told
+      me he was doing a magic act he'd practised for weeks. I mentioned that my daughter
+      had made me watch the same card trick about forty times. We laughed about it and
+      then the show started, so we went to our seats.
+
+  - id: debrief_vague
+    note: Too vague to show any step.
+    expected: [false, false, false, false]
+    account: >-
+      Had a nice chat with someone at the conference. We talked about a lot of things.
+      It went well, I think.
+
+  - id: debrief_early_ask
+    note: Honest opener, then an immediate ask with no exchange in between.
+    expected: [true, false, false, false]
+    account: >-
+      At the meetup I told the organiser, Leo, that I was nervous because it was my
+      first one. Straight after that I asked whether he could put me in touch with
+      anyone hiring designers. He said to email him.
+
+  - id: debrief_offer_other_words
+    note: All four steps; the offer is phrased as sharing a contact, not as an ask.
+    expected: [true, true, true, true]
+    account: >-
+      Waiting for the class to start at the community centre, I told the woman next to
+      me, Ruth, that I was rusty and slightly embarrassed to be back after a knee
+      injury. She said she had hurt her shoulder last winter and was still easing in. I
+      asked how the shoulder was holding up with the new routine, and she said it was
+      better but she was nervous about overhead work. I told her my knee had felt the
+      same for months until a physio gave me a few simple exercises. We chatted about
+      recovery for a while, and towards the end I said I could send her the physio's
+      name if she wanted it.
