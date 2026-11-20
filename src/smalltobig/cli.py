@@ -562,14 +562,37 @@ def export_framework(out: str) -> None:
 
 
 @main.command()
-@click.option("--host", default="127.0.0.1", show_default=True)
-@click.option("--port", type=int, default=None, help="Defaults to STB_PORT.")
-def serve(host: str, port: int | None) -> None:
-    """Run the web UI."""
+@click.option(
+    "--host", default=None,
+    help="Address to listen on. Defaults to STB_HOST (127.0.0.1). 0.0.0.0 = every "
+    "interface, including the LAN.",
+)
+@click.option("--port", type=int, default=None, help="Defaults to STB_PORT (8028).")
+def serve(host: str | None, port: int | None) -> None:
+    """Run the web UI. It has no login: serve beyond this machine on a trusted network only."""
     import uvicorn
 
     from smalltobig.web.app import create_app
 
     settings = get_settings()
+    bind, listen_port = host or settings.host, port or settings.port
     app = create_app(settings)
-    uvicorn.run(app, host=host, port=port or settings.port)
+    click.echo(f"Open http://{_display_host(bind)}:{listen_port}/htmsw/prep/new"
+               f" · privacy profile: {settings.privacy_profile}")
+    if bind not in ("127.0.0.1", "localhost", "::1"):
+        click.echo("No login: anyone on this network can open it.")
+    uvicorn.run(app, host=bind, port=listen_port)
+
+
+def _display_host(bind: str) -> str:
+    """The address to type into a browser: the LAN address when bound to all interfaces."""
+    if bind not in ("0.0.0.0", "::"):
+        return bind
+    import socket
+
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("192.0.2.1", 9))  # TEST-NET-1: no packet is sent for UDP connect
+            return str(s.getsockname()[0])
+    except OSError:
+        return "127.0.0.1"

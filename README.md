@@ -35,6 +35,79 @@ published books without putting your conversation notes anywhere.
 > phases. They predate the Phase 1–6 code, so where they say "no code yet",
 > read "not yet re-aligned to HTMSW".
 
+## Run it
+
+On the Mac that runs the model (Python 3.11 or later). All commands are from the
+project folder.
+
+**1. Install, once.**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev,web]"
+```
+
+On Apple Silicon, add `pip install -e ".[mlx]"` if you want the local embedding
+model. The rehearsal, debrief and prep pages don't need it.
+
+**2. Point it at a model server, once.** The app doesn't start a model itself; it
+talks to any OpenAI-compatible server. Copy the example config and fill in the
+model section:
+
+```bash
+cp examples/config/smalltobig.env.example .env
+```
+
+For omlx-serve on this Mac (the current model, DECISIONS #27):
+
+```bash
+STB_LLM_BASE_URL=http://127.0.0.1:8090/v1
+STB_LLM_MODEL=Qwen-AgentWorld-35B-A3B-oQ4
+STB_LLM_API_KEY=<the key omlx-serve shows>
+STB_LLM_ENABLE_THINKING=false
+```
+
+`.env` is git-ignored and loaded automatically. Then check that the app can reach
+the model:
+
+```bash
+stb doctor
+```
+
+**3. Start the web app, reachable from your LAN.**
+
+```bash
+stb serve --host 0.0.0.0
+```
+
+It prints the address to open, for example
+`http://192.168.1.112:8028/htmsw/prep/new`. Open that from any device on your
+network, or `http://127.0.0.1:8028` on this Mac. Stop it with Ctrl-C.
+
+- To make LAN the default so a plain `stb serve` does it, set `STB_HOST=0.0.0.0`
+  in `.env`. Leave it out, or set `127.0.0.1`, to keep the app on this Mac only.
+- To listen on a single address instead of all of them, use that address, e.g.
+  `--host 192.168.1.112`. Then `127.0.0.1` no longer works.
+- If macOS asks whether Python may accept incoming connections, click **Allow**.
+  Without that, other devices can't connect.
+- The port is 8028; change it with `--port` or `STB_PORT`.
+
+> **There is no login.** Anyone who can reach that address can see and change
+> everything in the app. Bind to the LAN only on a network you trust (a home
+> network or Tailscale), never on public Wi-Fi.
+
+**4. Where to start in the browser.** `/htmsw/profile` (four questions, once), then
+**Prepare**, **Rehearse** with Sarah, **Debrief** after a real conversation, and
+**Progress**. The rest of the app (sources, rules, drills) is the original
+evidence pipeline.
+
+What gets stored depends on `STB_PRIVACY_PROFILE`: `abstracted` (the default)
+keeps only yes/no results, while `full` also keeps transcripts and debrief text.
+The active profile is shown at the top of every HTMSW page. For every command,
+including the evidence pipeline, see the "How to run" section of
+[CLAUDE.md](CLAUDE.md).
+
 ## Why not just read the books
 
 Three problems make "collect tips, generate lessons" produce a useless pile:
