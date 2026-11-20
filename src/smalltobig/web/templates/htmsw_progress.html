@@ -3,6 +3,7 @@
 {% block content %}
 {% include "partials/_htmsw_nav.html" %}
 <h1>Progress</h1>
+{% if feedback_saved %}<p class="flash">Thanks, your feedback was saved.</p>{% endif %}
 <p class="muted">
   Per step and kind of conversation. A real conversation (debrief) counts {{ real_weight }}×
   a rehearsal. The top level needs real conversations: rehearsals alone can't reach it.
@@ -41,4 +42,47 @@
   {% else %}<p class="muted">None yet.</p>{% endif %}
 </section>
 {% endif %}
+
+<section class="card" id="feedback">
+  <h2>Feedback on the judge</h2>
+  {% if feedback and feedback.sessions %}
+  <p class="muted">{{ feedback.sessions }} feedback form{{ '' if feedback.sessions == 1 else 's' }} sent. A "wrong yes" is a step the judge passed that you don't think you did; a "wrong not yet" is one it missed.</p>
+  {% if feedback.agreement %}
+  <table>
+    <thead><tr><th>Step</th><th>Kind</th><th>Agreed</th><th>Wrong yes</th><th>Wrong not yet</th></tr></thead>
+    <tbody>
+      {% for a in feedback.agreement %}
+      <tr>
+        <td>{{ a.step_order }}. {{ step_names.get(a.step_order, '') }}</td>
+        <td>{{ 'rehearsal' if a.source == 'rehearsal' else 'real conversation' }}</td>
+        <td><span class="badge {{ 'ok' if a.agreed == a.asked else 'bad' }}">{{ a.agreed }}/{{ a.asked }}</span></td>
+        <td>{{ a.disputed_pass }}</td>
+        <td>{{ a.disputed_miss }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  <p><strong>Useful?</strong>
+    {% for kind, answers in feedback.useful.items() %}
+    {{ {'rehearsal': 'Rehearsals', 'real': 'Debriefs', 'prep': 'Prep cards'}[kind] }}:
+    yes {{ answers.get('yes', 0) }} · somewhat {{ answers.get('somewhat', 0) }} · no {{ answers.get('no', 0) }}{% if not loop.last %}; {% endif %}
+    {% endfor %}
+  </p>
+  {% if feedback.issues %}
+  <p><strong>What got in the way</strong></p>
+  <ul>
+    {% for kind, label, n in feedback.issues %}<li>{{ label }} <span class="muted">({{ kind }}, {{ n }})</span></li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% if feedback_notes %}
+  <p><strong>Comments</strong> <span class="muted">(full profile only)</span></p>
+  <ul>
+    {% for n in feedback_notes %}<li><span class="muted">{{ n['domain_id'] | replace('_', ' ') }}:</span> {{ n['note'] }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% else %}
+  <p class="muted">No feedback yet. Each rehearsal, debrief and prep card ends with a short form.</p>
+  {% endif %}
+</section>
 {% endblock %}

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from smalltobig.intake import profile as self_profile
 from smalltobig.intake.classify import classify
 from smalltobig.record import counters as record_counters
+from smalltobig.record import feedback as record_feedback
 from smalltobig.record import store as record_store
 from smalltobig.store import db
 
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
     from smalltobig.config import Settings
     from smalltobig.framework.loader import Framework
     from smalltobig.record.counters import StepCounter
+    from smalltobig.record.feedback import Submission, Summary
     from smalltobig.record.models import Outcome, SessionRecord
 
 
@@ -36,6 +38,16 @@ def save(settings: Settings, fw: Framework, record: SessionRecord) -> list[Outco
         conn.close()
 
 
+def save_with_ids(settings: Settings, fw: Framework, record: SessionRecord) -> list[int]:
+    """Save a session and return its outcome row ids, in verdict order, for feedback."""
+    conn = record_store.connect(settings.record_db_path, settings.privacy_profile)
+    try:
+        return [i for i, _ in record_store.write_with_ids(
+            conn, fw, record, settings.privacy_profile)]
+    finally:
+        conn.close()
+
+
 def progress(
     settings: Settings, fw: Framework, session_limit: int = 20
 ) -> tuple[list[Outcome], list[StepCounter], list[sqlite3.Row]]:
@@ -50,6 +62,28 @@ def progress(
         finally:
             conn.close()
     return outcomes, record_counters.counters(fw, outcomes), recent
+
+
+def record_feedback_submission(
+    settings: Settings, fw: Framework, submission: Submission, at: int
+) -> int:
+    """Store tester feedback under the active profile (record/feedback.py)."""
+    conn = record_store.connect(settings.record_db_path, settings.privacy_profile)
+    try:
+        return record_feedback.record(conn, fw, submission, settings.privacy_profile, at)
+    finally:
+        conn.close()
+
+
+def feedback_summary(settings: Settings) -> tuple[Summary | None, list[sqlite3.Row]]:
+    """Agreement and usefulness tallies, plus full-profile comments. None if no store yet."""
+    if not settings.record_db_path.exists():
+        return None, []
+    conn = record_store.connect(settings.record_db_path, settings.privacy_profile)
+    try:
+        return record_feedback.summary(conn), record_feedback.notes(conn)
+    finally:
+        conn.close()
 
 
 def purge_all(settings: Settings) -> None:

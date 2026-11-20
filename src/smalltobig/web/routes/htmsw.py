@@ -22,6 +22,7 @@ from smalltobig.llm.openai_compat import OpenAICompatClient
 from smalltobig.models.session import Turn
 from smalltobig.practice import htmsw_debrief, htmsw_judge, htmsw_roleplay
 from smalltobig.prep.compose import compose
+from smalltobig.record import feedback as record_feedback
 from smalltobig.record import service as record_service
 from smalltobig.record.models import SessionRecord
 from smalltobig.store import db
@@ -127,6 +128,7 @@ def prep_card(
             "card": card,
             "partners": htmsw_roleplay.partners_for(fw, domain_id),
             "privacy_profile": _profile(request),
+            **_feedback_context("prep", domain_id, [], []),
         },
     )
 
@@ -184,8 +186,9 @@ def _cluster_id(request: Request) -> str | None:
     return record_service.current_cluster(request.app.state.settings, _framework(request))
 
 
-def _record(request: Request, record: SessionRecord) -> None:
-    record_service.save(request.app.state.settings, _framework(request), record)
+def _record(request: Request, record: SessionRecord) -> list[int]:
+    """Save under the active profile; return outcome ids, in verdict order, for feedback."""
+    return record_service.save_with_ids(request.app.state.settings, _framework(request), record)
 
 
 def _turn_page(request: Request, partner: Partner, domain_id: str, turns: list[Turn]) -> Response:
@@ -265,7 +268,7 @@ def rehearse_end(
     turns = _turns(turns_json)
     with _client(settings) as client:
         verdicts, messages, reply = htmsw_judge.judge_detailed(client, fw, turns)
-    _record(
+    outcome_ids = _record(
         request,
         SessionRecord(
             source="rehearsal", domain_id=domain, created_at=datetime.now(UTC),
@@ -281,6 +284,7 @@ def rehearse_end(
         {
             "partner": partner, "turns": turns, "verdicts": verdicts, "steps": steps,
             "privacy_profile": _profile(request),
+            **_feedback_context("rehearsal", domain, verdicts, outcome_ids),
         },
     )
 
@@ -315,7 +319,7 @@ def debrief_submit(
         return RedirectResponse("/htmsw/debrief/new", status_code=303)
     with _client(settings) as client:
         verdicts, messages, reply = htmsw_debrief.extract(client, fw, account)
-    _record(
+    outcome_ids = _record(
         request,
         SessionRecord(
             source="real", domain_id=domain_id, created_at=datetime.now(UTC),
@@ -331,8 +335,63 @@ def debrief_submit(
         {
             "verdicts": verdicts, "steps": steps, "domain": fw.domain(domain_id),
             "privacy_profile": _profile(request),
+            **_feedback_context("real", domain_id, verdicts, outcome_ids),
         },
     )
+
+
+# ------------------------------------------------------------ tester feedback
+#
+# A short form under every result page and prep card (record/feedback.py). Stores
+# integers under both profiles; the optional comment only under `full`.
+
+
+def _feedback_context(
+    kind: record_feedback.Kind, domain_id: str, verdicts: list[htmsw_judge.StepVerdict],
+    outcome_ids: list[int],
+) -> dict[str, object]:
+    return {
+        "fb_kind": kind,
+        "fb_domain_id": domain_id,
+        "fb_steps": list(zip(outcome_ids, verdicts, strict=True)) if outcome_ids else [],
+        "fb_issues": record_feedback.issues_for(kind),
+    }
+
+
+@router.post("/feedback")
+async def feedback_submit(request: Request) -> Response:
+    # Async to read the per-step `agree_<outcome id>` fields; the service opens its
+    # own connection on this thread.
+    fw = _framework(request)
+    form = await request.form()
+    kind = str(form.get("kind") or "")
+    useful = str(form.get("useful") or "")
+    if kind not in record_feedback.KIND_CODES or useful not in record_feedback.USEFUL_CODES:
+        raise HTTPException(status_code=400, detail="choose whether this was useful")
+    try:
+        outcome_ids = tuple(int(str(v)) for v in form.getlist("outcome_id"))
+        agrees = tuple(
+            (oid, str(form.get(f"agree_{oid}")) == "yes")
+            for oid in outcome_ids if form.get(f"agree_{oid}") in ("yes", "no")
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="malformed outcome id") from exc
+    submission = record_feedback.Submission(
+        kind=kind,
+        domain_id=str(form.get("domain_id") or ""),
+        useful=useful,
+        outcome_ids=outcome_ids,
+        agrees=agrees,
+        issues=tuple(str(v) for v in form.getlist("issue")),
+        note=str(form.get("note") or ""),
+    )
+    try:
+        record_service.record_feedback_submission(
+            request.app.state.settings, fw, submission, int(datetime.now(UTC).timestamp())
+        )
+    except (record_feedback.FeedbackError, KeyError) as exc:
+        raise HTTPException(status_code=400, detail="feedback does not match a session") from exc
+    return RedirectResponse("/htmsw/progress?feedback=saved#feedback", status_code=303)
 
 
 # ----------------------------------------------------------- progress and purge
@@ -343,6 +402,7 @@ def progress(request: Request) -> Response:
     fw = _framework(request)
     settings: Settings = request.app.state.settings
     outcomes, table, recent = record_service.progress(settings, fw)
+    fb_summary, fb_notes = record_service.feedback_summary(settings)
     return templates.TemplateResponse(
         request,
         "htmsw_progress.html",
@@ -355,6 +415,10 @@ def progress(request: Request) -> Response:
             "total_outcomes": len(outcomes),
             "sessions": recent,
             "privacy_profile": settings.privacy_profile,
+            "feedback": fb_summary,
+            "feedback_notes": fb_notes,
+            "feedback_saved": request.query_params.get("feedback") == "saved",
+            "step_names": {s.order: s.name for s in fw.steps},
         },
     )
 

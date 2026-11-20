@@ -1,0 +1,47 @@
+{# Tester feedback (record/feedback.py). Needs fb_kind, fb_domain_id, fb_steps, fb_issues, privacy_profile. #}
+<section class="card" id="feedback">
+  <h2>Your feedback</h2>
+  <p class="muted">
+    Helps tune the {{ 'prep card' if fb_kind == 'prep' else 'judge' }}. Only your choices
+    are saved{% if privacy_profile == 'full' %}, plus the comment if you write one{% else %}, as
+    numbers; there is no comment box under the abstracted profile{% endif %}.
+  </p>
+  <form class="stacked" method="post" action="/htmsw/feedback">
+    <input type="hidden" name="kind" value="{{ fb_kind }}">
+    <input type="hidden" name="domain_id" value="{{ fb_domain_id }}">
+    {% if fb_steps %}
+    <fieldset>
+      <legend><strong>Was the judge right?</strong></legend>
+      {% for oid, v in fb_steps %}
+      <input type="hidden" name="outcome_id" value="{{ oid }}">
+      <div style="margin: 6px 0;">
+        {{ loop.index }}. {{ steps[v.step_id].name }}
+        <span class="badge {{ 'ok' if v.passed else 'bad' }}">{{ 'yes' if v.passed else 'not yet' }}</span>
+        <span style="margin-left: 10px;">
+          <label class="choice"><input type="radio" name="agree_{{ oid }}" value="yes"> right</label>
+          <label class="choice"><input type="radio" name="agree_{{ oid }}" value="no"> wrong</label>
+        </span>
+      </div>
+      {% endfor %}
+    </fieldset>
+    {% endif %}
+    <fieldset>
+      <legend><strong>Was this useful?</strong></legend>
+      {% for value, label in [('yes', 'Yes'), ('somewhat', 'Somewhat'), ('no', 'No')] %}
+      <label class="choice"><input type="radio" name="useful" value="{{ value }}" required> {{ label }}</label>
+      {% endfor %}
+    </fieldset>
+    <fieldset>
+      <legend><strong>Anything get in the way?</strong> <span class="muted">(tick any)</span></legend>
+      {% for issue in fb_issues %}
+      <label class="choice block"><input type="checkbox" name="issue" value="{{ issue.id }}"> {{ issue.label }}</label>
+      {% endfor %}
+    </fieldset>
+    {% if privacy_profile == 'full' %}
+    <label>Comment <span class="muted">(optional, kept under the full profile)</span>
+      <textarea name="note" maxlength="2000" style="min-height: 80px; font-family: inherit;"></textarea>
+    </label>
+    {% endif %}
+    <div class="actions"><button type="submit">Send feedback</button></div>
+  </form>
+</section>

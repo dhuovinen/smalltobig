@@ -40,6 +40,10 @@
     form.stacked input, form.stacked select, form.stacked textarea {
       width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; font: inherit;
     }
+    form.stacked input[type=radio], form.stacked input[type=checkbox] { width: auto; padding: 0; margin: 0 6px 0 0; }
+    form.stacked label.choice { display: inline-flex; align-items: center; font-weight: normal; margin: 4px 14px 0 0; }
+    form.stacked label.choice.block { display: flex; }
+    form.stacked fieldset { border: 0; padding: 0; margin: 12px 0 0; }
     textarea { min-height: 260px; font-family: ui-monospace, monospace; }
     .actions { margin-top: 16px; display: flex; gap: 10px; }
     button, .button {
